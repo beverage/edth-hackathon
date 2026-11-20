@@ -1,161 +1,226 @@
 # Voice-to-Map
 
-EDTH Paris 2026, challenge 01 (Lysk): spoken position reports become live map updates.
-When a report could mean more than one place, the app asks back instead of guessing.
+Voice-to-Map turns spoken location descriptions into updates on a shared map.
+People report from a phone browser. A controller watches their positions on a computer.
 
-Live: https://edth-hackathon.vercel.app (stage 1, single user, no auth). Two areas: Vincennes (English, French) and central Kyiv (Ukrainian, English), switched at the top of the page or with `?area=kyiv`.
+Use the phone keyboard's microphone to dictate a report. Review the text and send it.
+The phone shows when the report is received and processed. It then shows the result.
+If a place is ambiguous, the phone displays a question and buttons for the possible places.
+The speaker can choose a place or reject all the choices.
+
+The program supports English, French and Ukrainian. It includes maps for Vincennes and central Kyiv.
 
 ## How it works
 
-```
-phone mic ─► /api/report ─► speech-to-text (Mistral voxtral-mini-transcribe-3, place names as context_bias)
-                         ─► intent extraction (Mistral mistral-small-latest, JSON schema; never coordinates)
-                         ─► resolver (deterministic, local gazetteer of the chosen area from OpenStreetMap)
-                         ◄─ { transcript, language, intent, resolution, timings_ms }
-```
+- Ollama runs a language model on the controller computer. It extracts the place name and the meaning of the report.
+- A deterministic resolver finds the place in a local OpenStreetMap gazetteer. The language model never supplies coordinates.
+- The controller shows one marker per call sign. It also shows uncertainty circles, movement directions, trails and open questions.
+- Missions group the reports. Each mission has a name, an area and an optional starting place.
+- The report log is saved on the controller. Ended missions remain available for replay and export.
+- The program does not read the phone's GPS.
 
-- The language model only extracts intent: kind, landmark name (as said, plus its dictionary form for Ukrainian), category, relation, a stated distance in metres, a compass direction of travel, language.
-- `lib/geo/resolver.ts` turns intent + last position into a pin with a confidence radius, an arrow, or a question with up to three choices. Every coordinate comes from `data/gazetteer.<area>.json`, or from the last position moved by a distance and compass direction the speaker stated. The phone's GPS is never used.
-- The client holds all state (no database in stage 1). Questions are spoken with the browser's `speechSynthesis`. Ukrainian questions use an on-device voice instead when it is loaded (`lib/tts/`, test page at `/tts-lab`).
+There are two browser screens and one Node.js process. Ollama is a separate local process.
+The map uses bundled street lines and landmarks. It does not download map tiles.
 
-### Resolver rules
+## Requirements
 
-| Situation | Result |
+### Controller computer
+
+| Requirement | Purpose |
 |---|---|
-| No place in the report | `unresolved`, prompt to name a street or place |
-| Named place, one good match | `resolved` |
-| Named place, several good matches (e.g. "Château de Vincennes" = castle and metro station) | `ambiguous`, unless a category word outside the name ("…metro station") narrows it |
-| Category only ("the church") | candidates of that category within 1.5 km of the last position (or area centre) |
-| Several candidates | `resolved` only if the last position is under 10 min old and nearest < 0.4 × second nearest; otherwise `ambiguous` with the top 3 |
-| Name not in gazetteer but a category was said | ask among that category, never a silent guess |
-| Same name, same spot (station + the square above it) | one place, no question; the circle widens to cover all of them |
-| Street and station share a name ("на Хрещатику") | `ambiguous`: the street is 1.2 km long, the station is one point |
-| No place, but a distance and a compass direction ("moved 300 metres north") | `resolved` by dead reckoning from the last position, shown as an estimate |
-| The same with no last position | `unresolved`: "I don't know where you started", asks for a place |
-| No place, and only a distance or only a direction ("heading north") | `unresolved`: asks for a distance and a compass direction, or a landmark |
+| Node.js 24.12 or newer, including npm | Runs the controller, serves the pages and runs the development commands |
+| A current Ollama release | Runs the local language model |
+| The Ollama model `ministral-3:3b` | Interprets location descriptions |
+| A modern browser | Displays the controller map |
+| A local network shared with the phones | Connects phone browsers to the controller |
+| About 3 GB of disk space for the model | Stores the one-time model download |
+| Enough available memory for the model, Node and the browser | The model is the main memory requirement; use the 3B model on an 8 GB computer |
 
-Radius: at 30 m; near / behind / in front of / next to 80 m; compass relations (eight points) offset 100 m on that bearing with 100 m radius; large features (parks, the château, streets) use at least their own extent.
+The application has **no npm package dependencies**. Its JavaScript uses Node's built-in modules.
+It uses the browser's built-in HTML, CSS and SVG support.
 
-A stated distance replaces those defaults. "200 metres south of X" pins 200 m out from X's edge, with a circle of 0.4 × the distance (50 m at least): a compass word is one of eight, so it is good to ±22.5°. "200 metres from X", with no side given, keeps the pin on X and widens the circle to X's extent plus 1.25 × the distance. The model only copies a distance that was said; "five minutes north" has none.
+### Phone
 
-Movement ("moving towards X", "I moved towards X") gives a direction, not a distance. The marker moves to the middle of the leg from the last position to X, its circle spans the whole leg, an arrow points at X, and the time is shown at the marker with a ≈. The next report can still use that estimate, but "nearest wins" must hold even if the estimate is off by its full radius.
+- An Android phone or iPhone with a modern browser.
+- A keyboard with dictation for the chosen language. Typing is also supported.
+- Access to the controller over the same network.
 
-Movement with a distance is dead reckoning from the last position, and is also shown with a ≈:
+Dictation is provided by the phone and its keyboard. Some keyboards use an online speech service.
+Offline dictation depends on the phone, language and installed language packs.
+The application receives text. It does not record or upload audio.
 
-- "Moved 300 metres north": 300 m on that bearing. The circle is the last position's own circle plus 0.4 × the distance, so it grows with every leg until a report names a place again.
-- "Moved 200 metres towards X": 200 m along the leg, never past X. The circle is the last position's circle plus a quarter of the distance (50 m at least).
-- "Moved 300 metres east on rue X": the reckoned point is moved onto that street.
-- A place that cannot be found does not stop a move that states its distance and direction; the log says the place was ignored.
+## Install
 
-## Demo script
+These commands are for a Mac. Node and Ollama also provide installers for other systems.
 
-Chosen from the real gazetteer (911 features: 6 rail/metro stations, 11 churches, 2 town halls, 1 castle). Start from a fresh page (or "Clear map and log").
+1. Install [Node.js LTS](https://nodejs.org/en/download) and [Ollama](https://ollama.com/download).
+   If you use Homebrew, Ollama can be installed with:
 
-| # | Say | Expected |
+   ```bash
+   brew install ollama
+   ```
+
+2. Download or clone this repository. Open a Terminal in its root folder.
+
+   ```bash
+   cd ~/Projects/edth-hackathon
+   node --version
+   npm --version
+   ollama --version
+   ```
+
+3. Start Ollama in a separate Terminal. Leave that Terminal running.
+   Quit the Ollama desktop app first if it is already serving port 11434.
+
+   ```bash
+   OLLAMA_NO_CLOUD=1 OLLAMA_CONTEXT_LENGTH=4096 ollama serve
+   ```
+
+4. In another Terminal, download the model. This is about 3 GB and is needed once.
+
+   ```bash
+   ollama pull ministral-3:3b
+   ```
+
+No API key, messaging account or mobile development tools are required.
+There are no application packages to download with npm. `npm install` is optional.
+Internet is needed for installation and the model download.
+The controller and map can then run over a local network without an internet connection.
+Phone dictation may still need internet, as described above.
+
+## Build
+
+The source runs directly in Node and the browser. There is no compilation or bundling step.
+To validate the source before running it:
+
+```bash
+npm run build
+```
+
+This checks JavaScript syntax. It does not download models, install packages or start a server.
+
+## Run
+
+Keep Ollama running. In the repository root, start the controller:
+
+```bash
+npm start
+```
+
+Open [http://localhost:3117](http://localhost:3117) on the controller computer.
+The page shows whether Ollama and the selected model are available.
+The first report can take longer while the model loads.
+
+### Open a mission
+
+1. Click **New mission**.
+2. Enter a name and choose Vincennes or Kyiv.
+3. Optionally search for a starting place. This gives joining units an estimated starting position.
+4. Open the mission.
+
+The controller shows a phone address and a join code. If several network addresses are listed,
+use the address for the Wi-Fi network shared with the phones.
+
+The controller screen is available only from `localhost` on the computer running the program.
+Phones use the transmitter screen instead.
+
+### Connect a phone
+
+1. Connect the phone to the same Wi-Fi network as the controller.
+2. Open the displayed phone address. It looks like `http://192.168.1.10:3117/phone`.
+3. Select the mission, enter its join code and choose a call sign.
+4. Tap **Join mission**.
+5. Choose the report language.
+
+The connection uses ordinary HTTP on the local network. Use a trusted network.
+The phone page uses keyboard dictation, so it does not require browser microphone permission or an HTTPS microphone setup.
+If the computer firewall asks about incoming connections, allow the controller on the local network.
+
+### Send a report
+
+Tap the report text box. Use the keyboard microphone to dictate, or type the report.
+Check the words and tap **Send report**.
+
+Examples:
+
+- “I'm at Bérault metro.”
+- “I'm behind the church.”
+- “Moving towards the town hall.”
+- “Moved 200 metres north.”
+- “Je suis devant la mairie.”
+- “Я біля станції метро Хрещатик.”
+
+The phone displays a receipt, processing status and the outcome. It keeps a feedback history.
+If the controller asks a question, tap the correct place or **None of these**.
+The answer updates the same mission map. A newer report replaces an older unanswered question.
+
+**Read feedback aloud** uses the phone's installed system voices. Voice availability depends on the phone.
+If sending fails, the draft is kept and **Retry last report** becomes available.
+The controller recognises a repeated send and saves it once.
+
+### Watch and replay
+
+- Drag the map to pan. Use the zoom buttons or mouse wheel to zoom.
+- Click a unit to centre the map on its position.
+- Numbered markers show the choices for open questions.
+- Move the time slider to replay the mission. Click **Return to live** to resume live updates.
+- Click **Export log** to save the mission's events without its connection credentials.
+- Click **End mission** when reporting is finished. Its history remains available.
+
+Stop the controller with **Ctrl+C**. The saved missions are restored the next time it starts.
+Reports interrupted by a restart are marked as failed so the speaker can resend them.
+
+## Configuration
+
+Defaults work without a configuration file. To change them, create `.env.local` in the repository root.
+Use `.env.example` as a reference. Do not overwrite an existing configuration file.
+
+| Variable | Default | Meaning |
 |---|---|---|
-| 1 | "I'm at Bérault metro." | Unique named place: pin at Bérault, ±30 m |
-| 2 | "Now I'm at the château de Vincennes." | Ambiguous: phone asks "castle or station?" aloud; tap **Château de Vincennes (metro station)** |
-| 3 | "Moving towards the town hall." | Movement: the marker moves half way to Mairie de Vincennes (±174 m, the whole leg), with an arrow from the station to the mairie (nearest town hall wins: 347 m vs 1.45 km to Saint-Mandé) |
-| 4 | "Je suis devant la mairie." | French: pin in front of Mairie de Vincennes, ±80 m |
+| `HOST` | `0.0.0.0` | Network address to listen on; use `127.0.0.1` for computer-only use |
+| `PORT` | `3117` | Controller and phone port |
+| `OLLAMA_URL` | `http://127.0.0.1:11434` | Address of the Ollama server |
+| `LOCAL_EXTRACT_MODEL` | `ministral-3:3b` | Installed Ollama model |
+| `DATA_DIR` | `.data/lightweight` | Directory for saved mission events |
 
-If hall noise defeats transcription, type the same sentences in the text box; text and voice go through the same pipeline.
-
-### Kyiv, in Ukrainian
-
-Switch to **Київ** (2,112 features: 26 stations, 67 churches, 317 streets) and start from a fresh page. Checked with a synthetic Ukrainian voice, not yet with a native speaker.
-
-| # | Say | Expected |
-|---|---|---|
-| 1 | «Я на Хрещатику.» | Asks «вулиця Хрещатик чи Хрещатик (станція)?»; tap **вулиця Хрещатик** |
-| 2 | «Рухаюсь до Софійського собору.» | The marker moves half way, with an arrow to Saint Sophia Cathedral |
-| 3 | «Я біля станції метро Хрещатик.» | Pin at Khreshchatyk station, ±80 m |
-| 4 | «Я на Майдані Незалежності.» | Pin ±249 m, no question: station, square and street are one place |
-| 5 | "I'm at the Golden Gate." | English in the same session: pin at Золоті ворота, ±30 m |
-
-Order matters for step 1: said within 10 minutes of a fix at the station, «Я на Хрещатику» resolves to the station without asking (nearest wins).
-
-## Run locally
-
-The short version is below. [docs/setup.md](docs/setup.md) has every step with a check, including offline mode and the transmitter on a phone.
-
-A Mistral key is optional. Without one, run offline mode ([below](#offline-models-on-this-computer)).
+Command-line options override `HOST`, `PORT` and `DATA_DIR`:
 
 ```bash
-npm install
-npm run dev -- -p 3117                         # hosted mode: needs MISTRAL_API_KEY in .env.local
-PROVIDER_MODE=local npm run dev -- -p 3117     # offline mode: no key, needs Ollama (below)
+npm start -- --host 0.0.0.0 --port 3117 --data-dir .data/lightweight
 ```
+
+Mission data includes report text and phone connection credentials. Keep this directory private.
+Only one controller process can use a data directory at a time.
+
+## Troubleshooting
+
+| Problem | Action |
+|---|---|
+| `node`, `npm` or `ollama` is not found | Install the missing tool. Reopen Terminal and check its PATH. With Homebrew on Apple Silicon, try `eval "$(/opt/homebrew/bin/brew shellenv)"`. |
+| Ollama is unreachable | Start `ollama serve`. Check `OLLAMA_URL`. The default port is 11434. |
+| The model is missing | Run `ollama pull ministral-3:3b` while Ollama is running. |
+| The first report is slow | Allow the model to load. Keep other memory-heavy applications closed on an 8 GB computer. |
+| The phone cannot open the page | Check the Wi-Fi network, phone address, computer firewall and listening address. Guest Wi-Fi may block device-to-device connections. |
+| The keyboard has no microphone | Enable keyboard dictation in the phone settings, select a supported language, or type the report. |
+| A call sign is in use | Choose another call sign. A different phone may take it over after three minutes of inactivity. |
+| A mission has ended | Leave it and join an open mission. |
+| Port 3117 is in use | Stop the other program or choose a different port with `--port`. |
+
+## Development
 
 ```bash
-npm test             # resolver unit tests
-npm run gazetteer -- kyiv   # rebuild data/gazetteer.<area>.json from Overpass (vincennes or kyiv)
+npm test
+npm run build
 ```
 
-Environment (all optional; see `.env.example`): `MISTRAL_API_KEY` for hosted mode, the default; copy `.env.example` to `.env.local` and paste it there, never in a commit. Without it, use offline mode. Extraction falls back to `FEATHERLESS_API_KEY` behind the same interface if it is absent. Optional overrides: `MISTRAL_STT_MODEL`, `MISTRAL_EXTRACT_MODEL`.
+Tests use Node's built-in test runner. They do not need a model or an API key.
+The HTTP integration test opens a loopback port.
+The build command checks JavaScript syntax.
 
-### Offline: models on this computer
+`npm run scenarios -- vincennes` and `npm run scenarios -- kyiv` run the example reports against Ollama.
+These commands need the model running. They print the outcome and processing time for each report.
 
-`PROVIDER_MODE=local` makes the coordinator call nothing outside this computer. Intent extraction runs through Ollama with the same prompt and schema. There is no speech-to-text on the computer yet, so reports must arrive as text: the transmitter's phone modes, or typed. Audio gets a clear error.
+The source is in `src/`. Browser pages are in `web/`. Gazetteers are in `data/`.
+See [docs/architecture.md](docs/architecture.md) for the design and [docs/contracts.md](docs/contracts.md) for the interfaces.
 
-```bash
-brew install ollama                                   # 0.40 or newer; 0.8 cannot run Ministral 3
-OLLAMA_NO_CLOUD=1 OLLAMA_KEEP_ALIVE=-1 ollama serve   # its own terminal; no cloud models, keep the model loaded
-ollama pull ministral-3:3b                            # 3 GB, once
-PROVIDER_MODE=local npm run dev -- -p 3117
-```
-
-`LOCAL_EXTRACT_MODEL` picks another model (for example `ministral-3:8b`), `OLLAMA_URL` another address. At start the server loads the model and each area's prompt in the background, which takes about 10 s.
-
-Measured on 20 Nov on the MacBook (M1 Pro, 32 GB), the 9 scenario texts through extraction and the resolver:
-
-| Extraction | As expected | Median | Slowest |
-|---|---|---|---|
-| Mistral Small (hosted) | 9 of 9 | 0.8 s | 1.8 s |
-| Ministral 3 8B (local) | 8 of 9 | 5.1 s | 16 s |
-| Ministral 3 3B (local, default) | 8 of 9 | 2.0 s | 6.3 s |
-
-Both local models miss "I'm at the Golden Gate." (8B leaves the name out, 3B translates it and calls it a bridge); the app asks back or says it could not place it, never a wrong pin. The time is spent writing the answer (75 to 95 tokens), not reading the prompt.
-
-## Transmitter app and scenarios
-
-`transmitter/` is a small native app (Expo) that stands in for a field radio. It sends spoken reports to the same `/api/report` and shows and speaks the answer. A report comes from the microphone (hold to talk) or from a prepared clip, and both go down the same path, so the whole pipeline can be driven silently in a simulator. See [transmitter/README.md](transmitter/README.md) for how to build and run it.
-
-`scenarios/*.json` are scripted reports with the answer each one should get. `npm run scenarios` (on a Mac) makes the clips with synthetic English, French and Ukrainian voices. In the app, "Play scenario" sends every step and marks it ✓ or ✗; tapping one step sends it alone and leaves any question for you to answer.
-
-Checked in the iPhone simulator against the live site on 20 Nov: the Vincennes script scored 4 of 4 and the Kyiv script 5 of 5. Not yet run on a real phone or on Android.
-
-## Receiver
-
-The shared map for the base station: open `http://localhost:3117/receiver` on the computer that runs the coordinator, ideally on a big screen.
-
-A run is a **mission**. Open one from the Missions menu: an area, a name, and, if you like, a start point picked by name (the château, a metro station). Phones then join it from the transmitter: it lists the open missions, and the talk button waits until the phone has joined. A unit that joins starts around the start point, shown with ≈, and the phone asks it to check in by saying where it is. In a mission the coordinator keeps each unit's last position itself, so the phone's does not matter. End mission stops reports; the mission stays under "Ended" for replay, and can be deleted from there [107 to 114].
-
-Every report shows up within about a second: one coloured marker per call sign with its time, circle and trail, a list of units, and a feed of what was said. A question shows as "awaiting answer", with its choices numbered on the map, until the speaker taps one. The bar at the bottom replays the session at 1×, 10× or 30×, or from any moment on the slider; Live goes back to now. A unit silent for 3 minutes fades.
-
-The coordinator keeps each mission in `.data/sessions/<code>.jsonl`: its opening, joins, reports, answers and end, one line each, never edited. A deleted mission's file moves to `.data/sessions/deleted/`. The live site keeps no record yet, so it has no missions, phones report to it without one, and its receiver stays empty [101].
-
-## Layout
-
-```
-transmitter/                               native transmitter app (own package.json and tooling)
-scenarios/, scripts/build-scenarios.mjs    scripted reports and the clip generator
-app/page.tsx, components/VoiceMapApp.tsx   one mobile-first page: map, talk button, ask-back card, log
-app/receiver/, components/Receiver.tsx     the receiver: shared map, units, feed, replay; MissionPanel.tsx opens missions
-app/api/report/route.ts                    POST multipart: audio | text, lastPosition, clientTs, session
-app/api/answer/route.ts                    POST the choice tapped for a question
-app/api/sessions/                          list and open missions; [code]: the log, join, end, delete
-app/api/places/route.ts                    GET places by name, to pick a start point
-lib/reports/                               missions and their logs: entry types, store, record, position rule, foldLog
-lib/providers/transcriber.ts               Transcriber interface + Mistral
-lib/providers/extractor.ts                 IntentExtractor interface + prompt + JSON schema
-lib/geo/areas.ts                           areas: centre, bounding box, hint text
-lib/geo/gazetteer.ts                       name search, category words (en, fr, uk), bias terms
-lib/geo/resolver.ts                        pure resolver
-scripts/build-gazetteer.ts                 one Overpass query → data/gazetteer.<area>.json
-docs/                                      design docs, one file per topic; start at docs/README.md
-CONTRIBUTING.md                            setup, checks and working agreements for the team
-DECISIONS.md                               every choice made, one line each
-AGENTS.md                                  instructions for coding agents (Claude Code and Codex read the same file)
-```
-
-Map data © OpenStreetMap contributors (ODbL). Tiles by OpenFreeMap / OpenMapTiles.
+Map data © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright), licensed under the ODbL.

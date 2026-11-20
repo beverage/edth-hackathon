@@ -1,73 +1,47 @@
 # Voice-to-Map: instructions for coding agents
 
-This file is the one set of project instructions for every coding agent on the team: Claude Code and Codex both read `AGENTS.md`. Put project rules here (or in `transmitter/AGENTS.md` for the app), not in a tool-specific file such as `CLAUDE.md`, so every agent sees the same rules.
-
-EDTH Paris 2026, challenge 01 (Lysk): spoken position reports become live map updates, and the app asks back instead of guessing when a report could mean more than one place.
-
-## Read first
-
-- `docs/README.md`: the index of the design docs, one file per topic: overview, architecture, contracts, plan, gazetteer, open questions, known gaps, glossary. Update the matching file in the same change as the code.
-- `README.md`: how the pipeline works, the resolver rules, demo scripts, how to run.
-- `DECISIONS.md`: every choice made, one numbered line each. Check it before changing behaviour; a rule that looks odd usually has a decision behind it.
-- `CONTRIBUTING.md`: setup, checks and working agreements for the four of us.
-- `docs/setup.md`: setting up a computer step by step, with a check after each step: the coordinator, offline mode with Ollama, the transmitter on a phone. Follow it when asked to set up a machine or get the project running.
+Read `README.md`, `docs/architecture.md`, `docs/contracts.md` and `DECISIONS.md` before changing behaviour.
+The README is a user guide. Keep implementation history and decision records out of it.
 
 ## Layout
 
-```
-app/api/report/route.ts     the coordinator: POST multipart (audio | text, area, lastPosition, clientTs, session, callsign, seq)
-app/api/answer, app/api/sessions   the tapped choice in; missions: list, open, join, end, delete, and each one's log
-app/api/places              place search by name, for a mission's start point
-lib/reports/                missions and their logs: entry types (a contract with the receiver and the transmitter), store, record, foldLog
-components/Receiver.tsx     the receiver at /receiver: shared map, units, feed, replay; MissionPanel.tsx opens and ends missions
-lib/providers/              Transcriber and IntentExtractor interfaces, Mistral implementations
-lib/geo/resolver.ts         pure resolver: intent + last position + gazetteer -> pin, question or prompt
-lib/geo/types.ts            shared types; the transmitter imports them, so this is a contract
-data/gazetteer.<area>.json  place data from OpenStreetMap (vincennes, kyiv); rebuilt by a script, not by hand
-components/VoiceMapApp.tsx  the phone web page
-lib/tts/                    Ukrainian voice in the browser (onnxruntime-web)
-scenarios/                  scripted reports with expected answers
-transmitter/                native app (Expo); its own package.json, tooling and AGENTS.md
-tests/                      vitest
-docs/                       design docs, one Markdown file per topic; start at docs/README.md
-```
+- `src/main.js`: application entry point.
+- `src/http.js`: the small HTTP interface and static browser pages.
+- `src/controller.js`: missions, joins, report processing and answers.
+- `src/state.js`, `src/store.js`: event folding and durable local storage.
+- `src/ollama.js`, `src/intent.js`: local model interface, intent schema and validation.
+- `src/geo/`: deterministic geographic resolver and place matching.
+- `web/`: controller map and phone transmitter. Plain HTML, CSS and JavaScript.
+- `data/`: committed OpenStreetMap gazetteers.
+- `tests/`: Node's built-in test runner. No testing packages or live models are required.
 
 ## Commands
 
 ```bash
-npm install
-npm run dev -- -p 3117      # port 3117, not 3000; hosted mode, needs MISTRAL_API_KEY
-PROVIDER_MODE=local npm run dev -- -p 3117   # offline mode: no key, needs Ollama (docs/setup.md, part 3)
-npm test                    # unit tests; no network or key needed
-npx tsc --noEmit            # type-check (excludes transmitter/)
-npm run lint
-npm run gazetteer -- kyiv   # rebuild data/gazetteer.<area>.json from Overpass (network)
-npm run scenarios           # regenerate scenario clips (macOS only, uses `say`)
+npm start
+npm run build
+npm test
+npm run scenarios -- vincennes
 ```
 
-Run `npm test`, `npx tsc --noEmit` and `npm run lint` before calling a task done. If you changed `lib/geo/types.ts`, also run `npx tsc --noEmit` in `transmitter/`.
-
-A Mistral key is optional. Hosted mode (the default) calls Mistral and needs `MISTRAL_API_KEY` and network access. Offline mode (`PROVIDER_MODE=local npm run dev -- -p 3117`) needs no key: only Ollama on the same computer with `ministral-3:3b` (`docs/setup.md`, part 3). Never stop work to wait for a key; use offline mode instead. A sandbox without network can run the tests, not the live pipeline.
+Run `npm test` and `npm run build` for code changes.
+For documentation-only changes, review the changed text; do not run the code tests.
+No package installation, compiler, bundler or native SDK is required for the application.
 
 ## Rules
 
-- The language model never produces coordinates. It extracts intent; `lib/geo/resolver.ts` places it against the gazetteer. Do not add a path where a model output becomes a position.
-- The app never reads the phone's GPS.
-- When a report is ambiguous, ask back. Do not add silent guesses.
-- Providers stay European and behind the interfaces in `lib/providers/`. Do not add a US-hosted service to the request path (decision 42).
-- Record every choice in `DECISIONS.md`: append one numbered line at the end. If someone else appended at the same time, keep both lines and renumber yours.
-- Secrets live in env vars only. The repo is public.
-- `lib/geo/types.ts` and the fields of `POST /api/report` are a contract with the transmitter and the receiver. Change them on purpose, and say so in the decision line.
-- Do not deploy to production, push, or move the `prior-work-fri-1800` tag unless the person you are working for asks.
-- Write user-facing text and docs in plain, short sentences, in the same style as `README.md` and `DECISIONS.md`.
-- The docs live only in this repo, as Markdown. Do not create or update copies in other tools (Claude Docs, Google Docs, Notion); not everyone on the team uses them.
-
-<!-- BEGIN:nextjs-agent-rules -->
-
-## This is NOT the Next.js you know
-
-This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
-
-This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
-
-<!-- END:nextjs-agent-rules -->
+- The language model extracts intent. It never supplies coordinates.
+- Every position comes from the gazetteer or stated movement from the last position.
+- Do not read the phone's GPS.
+- Ask when a place is ambiguous. Do not silently choose.
+- Keep Ollama as the default and only model service. Do not add a hosted provider or API-key requirement.
+- Phone input is text, typed or dictated through the phone keyboard. Do not add custom audio capture without discussing its setup cost.
+- Keep received, processing, result, question and failure feedback visible on the phone.
+- Keep both reports and clarification answers in the shared event log.
+- Protect unit credentials. Phone requests cannot use controller-only endpoints or answer another unit's question.
+- Keep controller operations restricted to loopback. This application is for a trusted local network.
+- Use built-in Node and browser APIs. Discuss the installation and runtime cost before adding dependencies.
+- Keep all project documentation in this repository. Update it with the code it describes.
+- Append decisions to `DECISIONS.md`. Check the last number first.
+- Preserve unrelated user changes and local mission data.
+- Do not commit, push, deploy, or move the `prior-work-fri-1800` tag unless the user asks for that action.
