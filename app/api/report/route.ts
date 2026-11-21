@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { NoLocalTranscriberError, getTranscriber } from "@/lib/providers/transcriber";
 import { getExtractor, pinnedLanguage } from "@/lib/providers/extractor";
+import { matchAnswer, type AnswerChoice } from "@/lib/geo/answers";
 import { biasTerms, loadGazetteer } from "@/lib/geo/gazetteer";
 import { affiliationSaid, kindSaid, resolveReport, trackNumberSaid, withTrackNumber, type KnownTrack } from "@/lib/geo/tracks";
 import { readVoices } from "@/lib/geo/voices";
@@ -106,6 +107,8 @@ export async function POST(req: Request) {
   const seq = Number.isInteger(seqIn) && seqIn > 0 ? seqIn : null;
   // The language the device is set to. It decides the question's language; without it, it is guessed.
   const pinned = pinnedLanguage(form.get("language"));
+  // The choices of a question still open on the speaker's screen: a short clip may answer it [194].
+  const choices = answerChoices(form.get("choices"));
   if (session) {
     // In a mission, the mission sets the area and the log gives the last position, not the phone.
     try {
@@ -170,6 +173,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ transcript: "", language: heard, intent: null, timings_ms: timings, clientTs, area: area.id, ...saved, ...kept });
     }
 
+    // An answer to the open question, by voice or typed: "the second one", "Bérault", "none of these".
+    // Not a report, so nothing is read by the model or saved; the screen applies it as a tap [194].
+    const answer = choices.length ? matchAnswer(transcript, choices) : null;
+    if (answer) {
+      timings.total = Math.round(performance.now() - t0);
+      return NextResponse.json({ transcript, language: pinned ?? sttLanguage, answer, timings_ms: timings, clientTs, area: area.id });
+    }
+
     // The clip may hold other voices. With one voice this is one reading, as before; when two
     // voices name different places, the speaker is asked which is theirs (lib/geo/voices.ts).
     const extractor = getExtractor();
@@ -201,3 +212,19 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Processing failed. Try again or type the report.", transcript, timings_ms: timings }, { status: 502 });
   }
 }
+
+/** The `choices` field: a JSON list of at most four `{ id, name, category }`, or nothing. */
+function answerChoices(v: FormDataEntryValue | null): AnswerChoice[] {
+  if (typeof v !== "string" || v.length > 4000) return [];
+  try {
+    const list = JSON.parse(v);
+    if (!Array.isArray(list)) return [];
+    return list
+      .slice(0, 4)
+      .filter((c): c is AnswerChoice => !!c && typeof c.id === "string" && typeof c.name === "string" && c.id.length <= 200 && c.name.length <= 200)
+      .map((c) => ({ id: c.id, name: c.name, ...(typeof c.category === "string" ? { category: c.category } : {}) }));
+  } catch {
+    return [];
+  }
+}
+

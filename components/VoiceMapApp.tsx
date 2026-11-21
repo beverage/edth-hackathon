@@ -75,6 +75,8 @@ type ApiResponse = {
   resolution: Resolution;
   timings_ms: Timings;
   error?: string;
+  /** Set instead of a resolution when the clip answered the open question [194]. */
+  answer?: { choice: string | null; rule: string; detail: string };
 };
 /** `estimated`: worked out from the last position and a movement report, not from a stated position. */
 type Position = { lat: number; lon: number; ts: number; radius_m: number; label: string; estimated?: boolean };
@@ -272,6 +274,12 @@ export default function VoiceMapApp() {
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const wakeLockRef = useRef<{ release: () => Promise<void> } | null>(null);
   const chooseRef = useRef<((i: number) => void) | null>(null);
+  const rejectRef = useRef<(() => void) | null>(null);
+  // The open question, for `send`: its choices go with the next clip, which may answer it [194].
+  const pendingRef = useRef<Pending | null>(null);
+  useEffect(() => {
+    pendingRef.current = pending;
+  }, [pending]);
 
   useEffect(() => {
     positionRef.current = position;
@@ -502,7 +510,7 @@ export default function VoiceMapApp() {
       } else if (res.status === "ambiguous") {
         outcome = `Asked: ${res.question}`;
         setPending({ reportId: id, question: res.question ?? "Which one?", candidates: res.candidates, lang, track: res.track?.n ?? null });
-        setStatus("Which one did you mean?");
+        setStatus("Which one did you mean? Tap it, or hold the button and say it.");
         speak(res.question ?? "", lang);
       } else {
         outcome = `Unresolved: ${res.question ?? ""}`;
@@ -559,6 +567,9 @@ export default function VoiceMapApp() {
           : "Say it again with a street or place name.",
     );
   };
+  useEffect(() => {
+    rejectRef.current = rejectAll;
+  });
 
   // ---------- sending ----------
   const send = useCallback(
@@ -578,6 +589,8 @@ export default function VoiceMapApp() {
       fd.append("clientTs", String(Date.now()));
       fd.append("area", areaStore.get());
       fd.append("language", langStore.get());
+      const open = pendingRef.current;
+      if (open) fd.append("choices", JSON.stringify(open.candidates.map((c) => ({ id: c.id, name: c.name, category: c.category }))));
       const t0 = performance.now();
       try {
         const r = await fetch("/api/report", { method: "POST", body: fd });
@@ -586,6 +599,13 @@ export default function VoiceMapApp() {
         if (!r.ok || data.error) {
           setStatus(data.error ?? `Error ${r.status}`);
           if (data.transcript) setLastTranscript(data.transcript);
+        } else if (data.answer && open) {
+          // Answered by voice: the same as a tap on the choice, or on "None of these".
+          setLastTranscript(data.transcript);
+          setLastTimings(fmtTimings(data.timings_ms, rt));
+          const i = open.candidates.findIndex((c) => c.id === data.answer!.choice);
+          if (data.answer.choice === null) rejectRef.current?.();
+          else if (i >= 0) chooseRef.current?.(i);
         } else handleResponse(data, payload.audio ? "voice" : "text", rt);
       } catch {
         setStatus("Network error. Check the connection and try again.");

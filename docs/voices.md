@@ -111,3 +111,7 @@ When the speaker's language button is not the area's language, ten report phrase
 
 The two left both start with "Voiture civile devant la mairie", which has no phrase from the list and no place name of the area. The button is on EN by default, so most reports on the Ukrainian maps now carry the English phrases; no clip got worse, but 23 clips are few.
 
+## Answering a question by voice [194]
+
+While a question waits on the map page, the next clip can answer it: "the second one", "number three", "the last one", "Bérault", "the castle, Château de Vincennes", "none of these", and the same in French ("la deuxième", "aucun") and Ukrainian ("перша", "жоден"). The page sends the choices with the clip; the coordinator matches the words against them, with no model, in `lib/geo/answers.ts`, and the page applies the answer as if it were tapped. A clip of more than six words, a name that fits two choices equally, or a place and a name that disagree are read as a new report, as before. The native transmitter does not send its choices yet.
+
