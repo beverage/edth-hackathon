@@ -1,6 +1,7 @@
 /**
  * A spoken answer to an open question [194]. While a question waits, a short clip can answer it
- * instead of being a new report: "the second one", "Bérault", "none of these", "перша", "aucun".
+ * instead of being a new report: "the second one", "Bérault", "none of these", "перша", "aucun",
+ * and "yes" or "no" to "Do you mean X?" [195].
  * No model: the words are matched against the choices on screen, and anything unclear is left to
  * be read as a new report, as before.
  */
@@ -13,7 +14,7 @@ export interface AnswerChoice {
   category?: Category;
 }
 
-export type SpokenAnswer = { choice: string | null; rule: "answer_ordinal" | "answer_name" | "answer_none"; detail: string };
+export type SpokenAnswer = { choice: string | null; rule: "answer_ordinal" | "answer_name" | "answer_yes" | "answer_none"; detail: string };
 
 /** Longer than this, the clip is a report, not an answer to a question. */
 export const MAX_ANSWER_WORDS = 6;
@@ -30,7 +31,10 @@ const NUMBERS: Record<string, number> = {
   un: 0, une: 0, deux: 1, trois: 2,
   один: 0, одна: 0, одну: 0, два: 1, дві: 1, три: 2,
 };
-const NONE = new Set(["none", "neither", "nothing", "aucun", "aucune", "aucuns", "rien", "жоден", "жодна", "жодне", "жодного", "ні"]);
+const NONE = new Set(["none", "neither", "nothing", "aucun", "aucune", "aucuns", "rien", "жоден", "жодна", "жодне", "жодного"]);
+/** "Do you mean X?" has one choice: yes takes it, no refuses it. Both give way to a place or a name: "no, the second one". */
+const YES = new Set(["yes", "yeah", "yep", "correct", "affirmative", "exactly", "oui", "ouais", "exact", "exactement", "так", "точно", "правильно", "вірно"]);
+const NO = new Set(["no", "nope", "negative", "non", "ні"]);
 
 /** Ukrainian case endings: "Бераулт" and "Бераулта" are one word here. */
 const sameWord = (a: string, b: string) => a === b || (a.length >= 5 && b.length >= 5 && a.slice(0, 5) === b.slice(0, 5));
@@ -71,5 +75,17 @@ export function matchAnswer(text: string, choices: AnswerChoice[]): SpokenAnswer
   if (placed && named && placed.id !== named.id) return null; // "the second, Bérault" with Bérault first: unclear
   if (placed) return { choice: placed.id, rule: "answer_ordinal", detail: `"${text}" names choice ${choices.indexOf(placed) + 1}, ${placed.name}` };
   if (named) return { choice: named.id, rule: "answer_name", detail: `"${text}" names ${named.name}` };
+  if (words.some((w) => NO.has(w))) return { choice: null, rule: "answer_none", detail: `"${text}" says no` };
+  if (choices.length === 1 && words.some((w) => YES.has(w))) return { choice: choices[0].id, rule: "answer_yes", detail: `"${text}" says yes to ${choices[0].name}` };
   return null;
+}
+
+/**
+ * What the page says back after a spoken answer [196], so a misheard answer is caught at once:
+ * "Bérault. Marked." The speaker hears the name and can correct it without looking at the screen.
+ */
+export function answerReadback(name: string | null, lang: "en" | "fr" | "uk"): string {
+  if (lang === "fr") return name ? `${name}. Noté.` : "Aucun. Redites où vous êtes.";
+  if (lang === "uk") return name ? `${name}. Позначено.` : "Жоден. Повторіть, де ви.";
+  return name ? `${name}. Marked.` : "None of them. Say where you are again.";
 }

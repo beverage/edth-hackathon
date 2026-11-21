@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { matchAnswer, type AnswerChoice } from "../lib/geo/answers";
+import { answerReadback, matchAnswer, type AnswerChoice } from "../lib/geo/answers";
 
 const VINCENNES: AnswerChoice[] = [
   { id: "node/1", name: "Bérault", category: "metro_station" },
@@ -38,6 +38,15 @@ describe("a spoken answer to an open question [194]", () => {
     for (const said of ["None of these.", "Neither", "Aucun.", "Жоден."]) expect(matchAnswer(said, VINCENNES), said).toEqual(expect.objectContaining({ choice: null, rule: "answer_none" }));
   });
 
+  it("takes yes or no to a single choice, and a place or a name over a no [195]", () => {
+    const ONE = VINCENNES.slice(0, 1);
+    for (const said of ["Yes.", "Oui", "Так.", "Yeah, correct"]) expect(matchAnswer(said, ONE), said).toMatchObject({ choice: "node/1", rule: "answer_yes" });
+    for (const said of ["No.", "Non", "Ні."]) expect(matchAnswer(said, ONE), said).toMatchObject({ choice: null, rule: "answer_none" });
+    expect(matchAnswer("No, the second one", VINCENNES)).toMatchObject({ choice: "node/2", rule: "answer_ordinal" });
+    expect(matchAnswer("Ні, друга", VINCENNES)).toMatchObject({ choice: "node/2" });
+    expect(matchAnswer("Yes", VINCENNES)).toBeNull(); // yes to which one?
+  });
+
   it("leaves a new report, or anything unclear, to be read as a report", () => {
     expect(matchAnswer("Château de Vincennes", VINCENNES)).toBeNull(); // two places of that name
     expect(matchAnswer("I'm now moving towards the town hall by the park", VINCENNES)).toBeNull(); // too long
@@ -45,6 +54,16 @@ describe("a spoken answer to an open question [194]", () => {
     expect(matchAnswer("The second, Bérault", VINCENNES)).toBeNull(); // the place and the name disagree
     expect(matchAnswer("", VINCENNES)).toBeNull();
     expect(matchAnswer("first", [])).toBeNull();
+  });
+});
+
+describe("saying back a spoken answer [196]", () => {
+  it("names the place it took, or says none, in the question's language", () => {
+    expect(answerReadback("Bérault", "en")).toBe("Bérault. Marked.");
+    expect(answerReadback("Bérault", "fr")).toBe("Bérault. Noté.");
+    expect(answerReadback("Майдан Незалежності", "uk")).toBe("Майдан Незалежності. Позначено.");
+    expect(answerReadback(null, "en")).toMatch(/^None/);
+    expect(answerReadback(null, "uk")).toMatch(/^Жоден/);
   });
 });
 

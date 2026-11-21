@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "
 import type { GeoJSONSource, Map as MLMap, Marker } from "maplibre-gl";
 import { bearingDeg, destination, distanceM } from "@/lib/geo/geo";
 import { AREAS, DEFAULT_AREA, isAreaId, type AreaId } from "@/lib/geo/areas";
+import { answerReadback } from "@/lib/geo/answers";
 import type { Candidate, HeadingTo, Intent, Placement, Resolution } from "@/lib/geo/types";
 import { loadingLabel, ukrainianVoice } from "@/lib/tts/ukrainianVoice";
 
@@ -606,6 +607,8 @@ export default function VoiceMapApp() {
           const i = open.candidates.findIndex((c) => c.id === data.answer!.choice);
           if (data.answer.choice === null) rejectRef.current?.();
           else if (i >= 0) chooseRef.current?.(i);
+          // Say back what was understood, so a misheard answer is caught without looking [196].
+          if (data.answer.choice === null || i >= 0) speak(answerReadback(i >= 0 ? open.candidates[i].name : null, open.lang), open.lang);
         } else handleResponse(data, payload.audio ? "voice" : "text", rt);
       } catch {
         setStatus("Network error. Check the connection and try again.");
