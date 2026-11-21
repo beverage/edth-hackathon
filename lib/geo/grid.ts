@@ -247,12 +247,24 @@ export function gridSpacing(zoom: number): 1000 | 10000 | null {
 }
 
 /**
+ * Where a grid's figures go [233]: the eastings in a row at latitude `row`, the northings in a
+ * column at longitude `column`, and only those that fall `inside` the box. A map works these out
+ * from the part of the screen that nothing covers.
+ */
+export interface GridLabels {
+  row: number;
+  column: number;
+  inside: Bounds;
+}
+
+/**
  * MGRS grid lines over a box, in the UTM zone of `centre` [232]: lines of equal easting and
  * northing every `spacing` metres, each a few points long so it bends with the projection, and
- * label points at the box's left and bottom edges with the line's figures ("58", "10"), as on
- * a printed map. GeoJSON, for a map layer. At most 60 lines a way.
+ * label points with the line's figures ("58", "10"). By default the eastings go along the
+ * bottom and the northings up the left, as on a printed map. GeoJSON, for a map layer. At most
+ * 60 lines a way.
  */
-export function gridLines(b: Bounds, centre: LatLon, spacing: 1000 | 10000): GeoJSON.FeatureCollection {
+export function gridLines(b: Bounds, centre: LatLon, spacing: 1000 | 10000, labels?: GridLabels): GeoJSON.FeatureCollection {
   const zone = toUtm(centre).zone;
   const corners = [
     toUtm({ lat: b.south, lon: b.west }, zone),
@@ -273,33 +285,35 @@ export function gridLines(b: Bounds, centre: LatLon, spacing: 1000 | 10000): Geo
   /** The figures a line is read by: kilometres within the 100 km square, "58"; tens of km, "5". */
   const figures = (m: number) => (spacing === 1000 ? String(Math.floor((m % 100000) / 1000)).padStart(2, "0") : String(Math.floor((m % 100000) / 10000)));
   const steps = 8;
-  // Labels sit just inside the box: on the top edge for an easting, the left edge for a northing.
-  // The top, since the map's bottom is under the page's sheet and the replay bar.
-  const insetN = b.north - (b.north - b.south) * 0.03;
-  const insetE = b.west + (b.east - b.west) * 0.01;
+  // Labels sit just inside the box when the map gives no place for them: eastings near the bottom, northings near the left.
+  const { row, column, inside } = labels ?? { row: b.south + (b.north - b.south) * 0.03, column: b.west + (b.east - b.west) * 0.01, inside: b };
   for (let e = minE; e <= maxE; e += spacing) {
     const coords = Array.from({ length: steps + 1 }, (_, i) => pt(e, minN + ((maxN - minN) * i) / steps));
     const major = e % 100000 === 0;
     features.push({ type: "Feature", properties: { kind: "line", major }, geometry: { type: "LineString", coordinates: coords } });
-    const at = toUtm({ lat: insetN, lon: fromUtm(zone, e, toUtm({ lat: insetN, lon: b.west }, zone).northing).lon }, zone);
+    const at = toUtm({ lat: row, lon: fromUtm(zone, e, toUtm({ lat: row, lon: inside.west }, zone).northing).lon }, zone);
     const p = fromUtm(zone, e, at.northing);
-    if (p.lon > b.west && p.lon < b.east) features.push({ type: "Feature", properties: { kind: "label", text: figures(e) }, geometry: { type: "Point", coordinates: [p.lon, insetN] } });
+    if (p.lon > inside.west && p.lon < inside.east) features.push({ type: "Feature", properties: { kind: "label", text: figures(e) }, geometry: { type: "Point", coordinates: [p.lon, row] } });
   }
   for (let n = minN; n <= maxN; n += spacing) {
     const coords = Array.from({ length: steps + 1 }, (_, i) => pt(minE + ((maxE - minE) * i) / steps, n));
     const major = n % 100000 === 0;
     features.push({ type: "Feature", properties: { kind: "line", major }, geometry: { type: "LineString", coordinates: coords } });
-    const lat = fromUtm(zone, toUtm({ lat: b.south, lon: insetE }, zone).easting, n).lat;
-    if (lat > b.south && lat < b.north) features.push({ type: "Feature", properties: { kind: "label", text: figures(n) }, geometry: { type: "Point", coordinates: [insetE, lat] } });
+    const lat = fromUtm(zone, toUtm({ lat: inside.south, lon: column }, zone).easting, n).lat;
+    if (lat > inside.south && lat < inside.north) features.push({ type: "Feature", properties: { kind: "label", text: figures(n) }, geometry: { type: "Point", coordinates: [column, lat] } });
   }
   return { type: "FeatureCollection", features };
 }
 
-/** What the ruler says, as a radio report would give it: "300 m · bearing 060° · 1067 mils" [232]. */
+/**
+ * What the ruler says, as a radio report would give it: "300 m · bearing 060° · 1067 mils" [232].
+ * The mils come from the exact bearing, not the rounded degrees: a mil is 18 times finer [233].
+ */
 export function measureText(a: LatLon, b: LatLon): string {
   const d = distanceM(a, b);
-  const deg = Math.round((bearingDeg(a, b) + 360) % 360) % 360;
-  const mils = Math.round((deg * 6400) / 360) % 6400;
+  const exact = (bearingDeg(a, b) + 360) % 360;
+  const deg = Math.round(exact) % 360;
+  const mils = Math.round((exact * 6400) / 360) % 6400;
   const dist = d >= 1000 ? `${(d / 1000).toFixed(2)} km` : `${Math.round(d)} m`;
   return `${dist} · bearing ${String(deg).padStart(3, "0")}° · ${mils} mils`;
 }

@@ -8,7 +8,7 @@
 import { useEffect, useRef, useState, type FormEvent, type RefObject } from "react";
 import type { GeoJSONSource, Map as MLMap, MapMouseEvent } from "maplibre-gl";
 import type { LatLon } from "@/lib/geo/geo";
-import { gridLines, gridSpacing, measureText, readGrid, toGrid } from "@/lib/geo/grid";
+import { gridLines, gridSpacing, measureText, readGrid, toGrid, type GridLabels } from "@/lib/geo/grid";
 import styles from "./MapTools.module.css";
 
 const EMPTY: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [] };
@@ -41,6 +41,7 @@ export default function MapTools({ mapRef, ready, centre, below, copyOnClick = f
   const noteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const redrawRef = useRef<() => void>(() => {});
   const clearRulerRef = useRef<() => void>(() => {});
+  const toolsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     linesRef.current = lines;
@@ -86,11 +87,31 @@ export default function MapTools({ mapRef, ready, centre, below, copyOnClick = f
       const c = map.getCenter();
       setGrid(toGrid({ lat: c.lat, lon: c.lng }));
     };
+    /**
+     * Where the grid's figures go [233]: along the bottom and up the left of the part of the map
+     * that nothing covers. The bottom is the map's padding, which keeps clear of the page's sheet.
+     * The left column starts at the top of these tools, which sit below the page's own buttons.
+     */
+    const labelPlace = (): GridLabels => {
+      const el = map.getContainer();
+      const w = el.clientWidth;
+      const h = el.clientHeight;
+      const top = toolsRef.current ? toolsRef.current.getBoundingClientRect().top - el.getBoundingClientRect().top : 0;
+      const bottom = h - (map.getPadding().bottom ?? 0) - 12;
+      const left = 14;
+      const at = (x: number, y: number) => map.unproject([x, y]);
+      return {
+        row: at(w / 2, bottom).lat,
+        column: at(left, h / 2).lng,
+        // Clear of each other's corner: eastings right of the column, northings above the row.
+        inside: { west: at(left + 20, 0).lng, east: at(w - 14, 0).lng, north: at(0, top).lat, south: at(0, bottom - 16).lat },
+      };
+    };
     const drawLines = () => {
       const spacing = gridSpacing(map.getZoom());
       if (!linesRef.current || !spacing) return src("mgrs")?.setData(EMPTY);
       const b = map.getBounds();
-      src("mgrs")?.setData(gridLines({ west: b.getWest(), south: b.getSouth(), east: b.getEast(), north: b.getNorth() }, centreRef.current, spacing));
+      src("mgrs")?.setData(gridLines({ west: b.getWest(), south: b.getSouth(), east: b.getEast(), north: b.getNorth() }, centreRef.current, spacing, labelPlace()));
     };
     const drawRuler = () => {
       const p = points.current;
@@ -110,6 +131,11 @@ export default function MapTools({ mapRef, ready, centre, below, copyOnClick = f
     const onOut = () => {
       hovering = false;
       showCentre();
+    };
+    // A tap also sends mouse events, so it counts as hovering, and a touch screen never sends
+    // "mouseout". Without this the box would keep the tapped point while the map is dragged [233].
+    const onTouch = () => {
+      hovering = false;
     };
     const onMoveEnd = () => {
       if (!hovering) showCentre();
@@ -139,6 +165,7 @@ export default function MapTools({ mapRef, ready, centre, below, copyOnClick = f
     };
     map.on("mousemove", onMove);
     map.on("mouseout", onOut);
+    map.on("touchstart", onTouch);
     map.on("moveend", onMoveEnd);
     map.on("click", onClick);
     showCentre();
@@ -146,6 +173,7 @@ export default function MapTools({ mapRef, ready, centre, below, copyOnClick = f
     return () => {
       map.off("mousemove", onMove);
       map.off("mouseout", onOut);
+      map.off("touchstart", onTouch);
       map.off("moveend", onMoveEnd);
       map.off("click", onClick);
     };
@@ -175,7 +203,7 @@ export default function MapTools({ mapRef, ready, centre, below, copyOnClick = f
 
   if (!grid) return null;
   return (
-    <div className={styles.tools} style={{ top }}>
+    <div ref={toolsRef} className={styles.tools} style={{ top }}>
       <div className={styles.grid} title="MGRS grid of the point under the pointer, or of the map's centre">
         {grid}
       </div>
