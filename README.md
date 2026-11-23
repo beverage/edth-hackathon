@@ -9,7 +9,7 @@ Built by Team Ground Truth at EDTH Paris, 20 to 22 November 2026. We made the pi
 
 The command post, where the operator works. Seven units are on the radio net; the app reads who is speaking, where they are and what they see. Every position comes from map data, never from the language model. What the app is not sure of waits in the Decisions list for the operator. [More pictures](#in-pictures).
 
-Live: https://edth-hackathon.vercel.app (single user, no auth; it keeps no reports, so its command post stays empty). Three areas, switched at the top of the page or with `?area=kyiv`: Vincennes (English, French), central Kyiv (Ukrainian, English) and Izium (Ukrainian, English), a town near the front in Kharkiv Oblast (`?area=izium`). Deployed from `main` on 21 November.
+It runs on your own computer: see [Run locally](#run-locally). Three areas, switched at the top of the page or with `?area=kyiv`: Vincennes (English, French), central Kyiv (Ukrainian, English) and Izium (Ukrainian, English), a town near the front in Kharkiv Oblast (`?area=izium`). The hosted copy on Vercel was taken down on 23 November [261].
 
 ## In pictures
 
