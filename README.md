@@ -3,7 +3,29 @@
 EDTH Paris 2026, challenge 01 (Lysk): spoken position reports become live map updates.
 When a report could mean more than one place, the app asks back instead of guessing.
 
+Built by Team Ground Truth at EDTH Paris, 20 to 22 November 2026. We made the pitch round, out of 50 teams.
+
+<img src="docs/images/showcase/vincennes.jpg" alt="The command post in Vincennes: seven units on the left, seven tracks on the right, and the map between them with every unit's circle and trail and every track's symbol. CHARLIE 3, a drone team, is looking at Track 6. The Decisions card on the map holds four things waiting for the operator: DELTA 1's request for eyes on Track 3, a report signed off &quot;Bravo 2&quot;, a report with no call sign, and ALPHA 2's question about which church." width="800">
+
+The command post, where the operator works. Seven units are on the radio net; the app reads who is speaking, where they are and what they see. Every position comes from map data, never from the language model. What the app is not sure of waits in the Decisions list for the operator. [More pictures](#in-pictures).
+
 Live: https://edth-hackathon.vercel.app (single user, no auth; it keeps no reports, so its command post stays empty). Three areas, switched at the top of the page or with `?area=kyiv`: Vincennes (English, French), central Kyiv (Ukrainian, English) and Izium (Ukrainian, English), a town near the front in Kharkiv Oblast (`?area=izium`). Deployed from `main` on 21 November.
+
+## In pictures
+
+All four come from typed radio reports read by the offline model, on 23 November 2026. How they were made, and how to take them again: [docs/showcase.md](docs/showcase.md).
+
+<img src="docs/images/showcase/vincennes-question.jpg" alt="The same Vincennes mission with ALPHA 2's question open: &quot;Which church: Temple (ERF), Sainte-Chapelle de Vincennes, or Église Notre-Dame?&quot;, with the three churches numbered 1 to 3 on the map and in the Decisions card." width="800">
+
+"Alpha 2, at the church." Three churches are near enough, so the app asks instead of guessing. The choices are numbered on the map and in the card; the operator presses a number, then Enter.
+
+<img src="docs/images/showcase/kyiv.jpg" alt="Kyiv, in Ukrainian: five units and four tracks. ALPHA 1's question asks which of three places called Золоті ворота: the metro station, the theatre 1.0 km away, or the sculpture 1.1 km away." width="800">
+
+Kyiv, in Ukrainian. «Альфа 1, я біля Золотих воріт.» fits three places named Золоті ворота, so the operator is asked which one, in Ukrainian, with how far each is.
+
+<img src="docs/images/showcase/izium.jpg" alt="Izium: four units, three tracks including hostile armour on Європейська вулиця. CHARLIE 1's question asks whether «Сіверський Дінця» means the river Сіверський Донець." width="800">
+
+Izium, a town near the front. The river's name came in another grammatical case, which matched nothing exactly, so the app asks whether it means the Siverskyi Donets. CHARLIE 1 stays where it was until the operator answers.
 
 ## How it works
 
