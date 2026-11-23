@@ -1,6 +1,6 @@
 # Overview
 
-EDTH Paris 2026, challenge 01 (Lysk). Two of Lysk's three judged items are met on the live site. The third, a shared map with a history anyone can replay, was built on Friday night and runs on a laptop; it is not on the live site yet and has not been run with real phones.
+EDTH Paris 2026, challenge 01 (Lysk). Two of Lysk's three judged items are met on the live site. The third, a shared map with a history anyone can replay, was built on Friday night and runs on a laptop; it is not on the live site yet and has not been run with real phones. The live site was paused on 23 November, after the hackathon [261].
 
 ## The challenge
 

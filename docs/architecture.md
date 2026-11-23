@@ -25,7 +25,7 @@ configured. Hosted readiness checks configuration, not live provider availabilit
 - **Command post (CP)**: the shared map at the base station, with every call sign, the tracks and a replay. `/cp`, called the receiver before 21 Nov [176]. It opens and ends missions, places and edits tracks by hand, and can answer a unit's open question [98, 113, 177, 178]. It can place a unit by hand too, when the app did not place it or placed it wrongly [243].
 - **Mission**: one run, with a code, an area, an optional start point and a roster of call signs. The native transmitter picks one and sends its code, like a radio tuned to a net; it does not join or name itself, so the coordinator reads the sender from the words [107, 114, 201, 202, 208].
 - **Track**: something on the map that is not a reporting unit. A unit sees it and reports it by voice; the coordinator numbers it and the command post draws it with its standard symbol. For reconnaissance only [146 to 152, 234]. A unit can ask by radio for a drone to look at a track, and a person at the command post sends a friendly drone or drone team track, or declines [234].
-- **Area**: a region with its own gazetteer file (`vincennes`, `kyiv`, and since 21 November `izium`). All three are on the live site.
+- **Area**: a region with its own gazetteer file (`vincennes`, `kyiv`, and since 21 November `izium`). All three were on the live site until it was paused on 23 November [261].
 
 ## Block diagrams
 
@@ -205,7 +205,7 @@ What the script saves for one area, and what it leaves out:
 
 Each area is one run: `npm run basemap -- vincennes`, then `kyiv`, then `izium`. Kyiv is 210 tiles and 13.2 MB of download, Izium 253 tiles and 5.6 MB; the three together are 75 MB on disk. On a computer where an area was not fetched, a mission there has little or nothing under its units.
 
-**Deploys.** The live site is https://edth-hackathon.vercel.app. It is deployed with the Vercel CLI from Alex's account; the project is not connected to GitHub, so a push does not deploy. Production is at commit `e030cc3`, deployed on Saturday 21 November at 09:10 and checked with typed reports in all three areas. The live site keeps no reports, so it has no missions and its command post stays empty [101]. `.vercelignore` says what the CLI must not upload: it does not read `.gitignore` [144]. Before changing it, look at what would go up with `vercel deploy --prod --dry`.
+**Deploys.** The live site, https://edth-hackathon.vercel.app, was paused on Monday 23 November: every address answers 503, "DEPLOYMENT_PAUSED" [261]. The Vercel project `edth-hackathon` stays, with its deployments and settings, so unpausing it in Vercel brings the site back as it was. It was deployed with the Vercel CLI from Alex's account; the project is not connected to GitHub, so a push does not deploy. Its last production deploy is commit `e030cc3`, from Saturday 21 November at 09:10, checked with typed reports in all three areas. It kept no reports, so it had no missions and its command post stayed empty [101]. `.vercelignore` says what the CLI must not upload: it does not read `.gitignore` [144]. Before changing it, look at what would go up with `vercel deploy --prod --dry`.
 
 **Repo.** https://github.com/beverage/edth-hackathon is public. Commit author emails are therefore public too.
 

@@ -132,8 +132,7 @@ unplugged. Off the cable, install a release build: it carries its code inside [2
 
 A development build loads its code from the computer running the dev server, so it knows that
 computer's address. It sends reports to the coordinator on that same computer, port 3117
-(`npm run dev -- -p 3117` in the folder above). Setup switches between "This Mac" and
-"Live site" (`https://edth-hackathon.vercel.app`), and the dot beside the coordinator's name
+(`npm run dev -- -p 3117` in the folder above). The dot beside the coordinator's name
 shows whether it answers (re-checked every 5 seconds). `EXPO_PUBLIC_SERVER_URL` overrides the default.
 
 Setup → Hosts lists discovered reachable coordinators. A manual override remains in
