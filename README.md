@@ -11,6 +11,72 @@ The command post, where the operator works. Seven units are on the radio net; th
 
 It runs on your own computer: see [Run locally](#run-locally). Three areas, switched at the top of the page or with `?area=kyiv`: Vincennes (English, French), central Kyiv (Ukrainian, English) and Izium (Ukrainian, English), a town near the front in Kharkiv Oblast (`?area=izium`). The hosted copy on Vercel was taken down on 23 November [261].
 
+## What works
+
+All of this runs on one laptop, with no internet if you like, and `npm run demo` shows most of it in a minute.
+
+- **Spoken reports become positions on the map**, in English, French and Ukrainian, from the phone app or typed. Speech-to-text and intent extraction run on the laptop (Whisper, Ministral 3B) or through Mistral. The model never gives a coordinate: every position comes from OpenStreetMap data for the area, or from a distance and direction the speaker said.
+- **It asks back.** When a report fits more than one place, the operator gets a question with numbered choices, on the map and in the Decisions list, and answers with a number key and Enter. A short spoken answer ("the second one") is heard, and the operator confirms it [251].
+- **A radio net.** The sender is read from the call sign in the words. A report with no call sign, or with one said last, waits for the operator to say whose it is [202, 237].
+- **Tracks.** "Two enemy vehicles on Avenue de Paris" becomes Track 1 with its NATO symbol, placed from what the observer said. Later reports move it or change what it is.
+- **Recon tasking.** The command post marks a unit as a drone team and sends it to look at a track, on a unit's request or on its own. A line joins them until the operator says recon is done [234, 235].
+- **How soldiers give a place:** grid references [223], bearings [229] and clock directions [198], "two blocks east" [184], "passing the next intersection".
+- **Missions** are logged line by line and replay at 1×, 10× or 30× [206].
+
+What is not built yet: [docs/known-gaps.md](docs/known-gaps.md).
+
+### The code that was judged
+
+The code at the submission deadline, 12:00 on Sunday 22 November, is the tag [`deadline-sun-1200`](https://github.com/beverage/edth-hackathon/tree/deadline-sun-1200). Seven pull requests went in that afternoon (#60 to #66): the command post's thin columns and list order, which the pictures here show, a faster hand-over of held reports, the whole extraction prompt for Ollama, and fixes to the phone builds. Since 22 November only the docs, the pictures and the way to run it have changed: [every change since the deadline](https://github.com/beverage/edth-hackathon/compare/deadline-sun-1200...main).
+
+## Run locally
+
+Two ways, both on one computer. Every step, with a check after each, is in [docs/setup.md](docs/setup.md).
+
+**Hosted** calls Mistral. Put the key in `MISTRAL_API_KEY`, or in `.env.local` (copy `.env.example`):
+
+```bash
+npm ci
+npm run build
+npm start
+```
+
+**Offline** sends nothing off the computer. It needs Ollama with `ministral-3:3b`, whisper.cpp and ffmpeg; on macOS, `brew install ollama whisper.cpp ffmpeg`, then `ollama pull ministral-3:3b` while Ollama runs. After `npm ci` and `npm run build`, start each of these in its own console:
+
+```bash
+OLLAMA_CONTEXT_LENGTH=8192 ollama serve
+```
+
+```bash
+npm run stt
+```
+
+```bash
+PROVIDER_MODE=local npm start
+```
+
+`npm run stt` is speech-to-text; its first run downloads Whisper turbo (574 MB). Typed reports work without it.
+
+Then fill a mission and watch it at `http://localhost:3117/cp`:
+
+```bash
+npm run demo
+```
+
+It sends 20 typed radio reports in Vincennes through the same pipeline as spoken ones. Units check in, tracks are reported, a question is answered, a drone team is sent to look at a track, and three things are left waiting in the Decisions list. `npm run demo -- all` adds Kyiv and Izium; `--pace 4` spaces the reports out, to watch them arrive.
+
+For the phone app, see [transmitter/README.md](transmitter/README.md). For hot reload while changing code, use `npm run dev -- -p 3117`.
+
+The offline map, other models and a computer short of memory are covered in [docs/setup.md](docs/setup.md#offline-mode). Measured on 20 Nov on the MacBook (M1 Pro, 32 GB), the 9 scenario texts through extraction and the resolver:
+
+| Extraction | As expected | Median | Slowest |
+|---|---|---|---|
+| Mistral Small (hosted) | 9 of 9 | 0.8 s | 1.8 s |
+| Ministral 3 8B (local) | 8 of 9 | 5.1 s | 16 s |
+| Ministral 3 3B (local, default) | 8 of 9 | 2.0 s | 6.3 s |
+
+Both local models miss "I'm at the Golden Gate." (8B leaves the name out, 3B translates it and calls it a bridge); the app asks back or says it could not place it, never a wrong pin. The time is spent writing the answer (75 to 95 tokens), not reading the prompt.
+
 ## In pictures
 
 All four come from typed radio reports read by the offline model, on 23 November 2026. How they were made, and how to take them again: [docs/showcase.md](docs/showcase.md).
@@ -39,7 +105,7 @@ phone mic ─► /api/report ─► speech-to-text (local Whisper, or hosted Mis
 - The language model only extracts intent: kind, landmark name (as said, plus its dictionary form for Ukrainian), category, relation, a stated distance in metres, a compass direction of travel, language.
 - `lib/geo/resolver.ts` turns intent + last position into a pin with a confidence radius, an arrow, or a question with up to three choices. Every coordinate comes from `data/gazetteer.<area>.json`, or from the last position moved by a distance and compass direction the speaker stated. The phone's GPS is never used.
 - A report can also be about a **track**: something the speaker sees or knows of ("enemy vehicle in front of the town hall", "drone 300 metres north of me"). The coordinator numbers it and says the number back ("Track 3, hostile vehicle, Mairie de Vincennes."), and the command post draws it with its NATO symbol. Tracks are for reconnaissance only: who saw what, where, when, and how sure the place is. See [Tracks](#tracks).
-- The client holds all state (no database in stage 1). Questions are spoken with the browser's `speechSynthesis`. Ukrainian questions use an on-device voice instead when it is loaded (`lib/tts/`, test page at `/tts-lab`).
+- The coordinator keeps each mission as one log file, read by the command post (see [Command post](#command-post)). On the web page at `/`, questions are spoken with the browser's `speechSynthesis`. Ukrainian questions use an on-device voice instead when it is loaded (`lib/tts/`, test page at `/tts-lab`).
 
 ### Resolver rules
 
@@ -105,9 +171,9 @@ A report about a track never moves the speaker. The number is given when the rep
 
 Crossings are not in the gazetteer. `lib/geo/crossings.ts` finds them where two named streets share a point in OpenStreetMap; a bridge shares none, so it is not a crossing. In a mission the coordinator remembers the street each unit is on (from a report that named a street, kept through crossings on it) and the way it last moved, and passes both with the last position. A crossing within 20 m is the one the unit is at, never the next one. The pin is the crossing, with a 30 m circle.
 
-## Demo script
+## Scripts for the web page
 
-The script for the pitch is not this one. It is for one phone as every radio in a mission, offline, and each of its lines was tested that way: [docs/stage-test-plan.md](docs/stage-test-plan.md#the-stage-script). The scripts below are for the web page, one speaker and no mission.
+To fill a mission on the command post without a phone, use `npm run demo` ([Run locally](#run-locally)). The scripts below are for the web page at `/`: one speaker, no mission, spoken or typed. The script used on stage, one phone as every radio in a mission, is in [docs/hackathon/stage-test-plan.md](docs/hackathon/stage-test-plan.md#the-stage-script).
 
 Chosen from the real gazetteer (1,130 features: 6 rail/metro stations, 11 churches, 2 town halls, 1 castle, 31 stops, 38 pharmacies). Start from a fresh page (or "Clear map and log").
 
@@ -170,64 +236,11 @@ Switch to **Ізюм** (714 features: 1 railway station, 6 churches, 503 streets
 
 At the end the map has six tracks and both units are still where they checked in. Step 7 names a street, not the castle: "moved to the castle" makes the local model ask castle or station.
 
-## Run locally
+## Offline mode
 
-Install tools once using [setup](docs/setup.md). Connect and unlock the phone, then use
-these three commands from the project directory:
-
-```bash
-npm run build
-npm start
-npm stop
-```
-
-| Command | What it does |
-|---|---|
-| `npm run build` | Builds components whose source/dependencies changed; builds or reloads the phone app and loads it on the connected phone when needed |
-| `npm start` | Stops existing project servers, then starts Whisper speech-to-text, Ollama, coordinator/web server and phone code server; opens the command post, leaving phone app launch to you |
-| `npm start light` | Starts with Whisper base and unloads Ollama after 30 seconds idle; the next report reloads it |
-| `npm stop` | Stops project processes and the connected phone app, including servers and the internal process controller; keeps mission data |
-
-`build` needs `npm run`; `start` and `stop` are npm’s built-in shortcuts. No routine command
-needs parameters; `npm start light` is the optional lower-memory start. If more than one phone is connected, leave only the one being used connected.
-Build with no phone connected prepares the coordinator; connect the phone and repeat the
-same build command to prepare it. Build may stop services that need replacing; use Start
-afterwards.
-
-On the phone, open **Transmitter**. It checks the configured server and offers **Connect**.
-If no mission is running, it says so and shows **Waiting for mission** after connecting.
-On the command post, use **Start mission**; the phone follows the newest running mission automatically.
-**Stop mission** ends reporting and keeps the log for replay. Starting/stopping servers
-and starting/stopping missions are separate actions.
-
-Hosts lists reachable coordinators discovered through the USB/Metro host, LAN advertisements and, on an iPhone, the phone's own search of the local network. Tap Connect beside the server you want. Manual host override,
-scenarios and test settings are under Developer tools. The phone records audio; voice-to-text runs on the coordinator. The mission supplies the area. Replay controls open through **Replay**.
-
-Local inference is the default; install Ollama, whisper.cpp and ffmpeg on the host once. No AI model is installed on the phone. Advanced developers can
-still run components directly; see [setup](docs/setup.md#advanced-console-use). Logs are in
-`.run/launcher.log`. Shutdown scans project processes across all ports, including old
-controllers and orphan workers, and verifies they have exited before reporting Stopped.
-Unrelated processes are left alone.
-
-### Offline: models on this computer
-
-`PROVIDER_MODE=local` makes the coordinator call nothing outside this computer. Intent extraction runs through Ollama with the same prompt and schema, at a context of 8,192 tokens that each call names, so the prompt is never cut [254]. Speech-to-text runs locally through whisper.cpp’s whisper-server with Whisper turbo by default, base with `npm start light` and Silero VAD. Where the place names are in Latin letters, Whisper gets a short prompt: the mission's call signs and the area's ten likeliest place names [247]. The phone sends audio, with its language; typed reports still work. Build prepares the checksum-verified host models once (about 635 MB for both speech models and VAD); Start runs the service and waits for readiness.
-
-Install the host tools and Ollama model using [setup](docs/setup.md#install-once). On macOS the tools are `brew install ollama whisper.cpp ffmpeg`. Then use Build followed by Start above; Build prepares the Whisper models once.
+`PROVIDER_MODE=local` makes the coordinator call nothing outside this computer. Intent extraction runs through Ollama with the same prompt and schema, at a context of 8,192 tokens that each call names, so the prompt is never cut [254]. Speech-to-text runs through whisper.cpp's whisper-server with Whisper turbo (base with `WHISPER_PROFILE=light`) and Silero VAD. Where the place names are in Latin letters, Whisper gets a short prompt: the mission's call signs and the area's ten likeliest place names [247]. The phone sends audio, with its language; typed reports still work. No AI model runs on the phone.
 
 The map works offline too. `npm run basemap -- vincennes` saves the area's tiles, fonts and icons from OpenFreeMap into `public/basemap/` once, with internet (28 MB; `kyiv` and `izium` are one run each, 13 and 6 MB). In offline mode both maps read that copy and ask no other host. With no saved copy and no internet, the units and tracks draw on a plain background and the map's corner says so. `BASEMAP=hosted` or `BASEMAP=local` picks the map whatever the mode [239].
-
-`LOCAL_EXTRACT_MODEL` picks another model (for example `ministral-3:8b`), `OLLAMA_URL` another address. At start the server warms the model and each area's prompt. The launcher waits for this before showing Ready.
-
-Measured on 20 Nov on the MacBook (M1 Pro, 32 GB), the 9 scenario texts through extraction and the resolver:
-
-| Extraction | As expected | Median | Slowest |
-|---|---|---|---|
-| Mistral Small (hosted) | 9 of 9 | 0.8 s | 1.8 s |
-| Ministral 3 8B (local) | 8 of 9 | 5.1 s | 16 s |
-| Ministral 3 3B (local, default) | 8 of 9 | 2.0 s | 6.3 s |
-
-Both local models miss "I'm at the Golden Gate." (8B leaves the name out, 3B translates it and calls it a bridge); the app asks back or says it could not place it, never a wrong pin. The time is spent writing the answer (75 to 95 tokens), not reading the prompt.
 
 ## Transmitter app and scenarios
 
@@ -257,13 +270,15 @@ Every report shows up within about a second: one coloured marker per call sign w
 
 **Decisions** [240, 258]. Everything that waits on the operator is in one list on a card over the map, oldest first. The card takes the side of the map that hides fewer of the open decision's points, and the map frames the unit and its choices in the room the card leaves, also while it follows the units. It moves only when another decision opens. Drag it by its heading to put it somewhere else; it stays there until Unpin. On a phone it lies across the bottom of the map. The list holds questions with choices, questions with none, radio reports held until the operator says whose they are, and requests for recon. Each row shows how long it has waited (red from 2 minutes), the unit, a short tag and the words. One is open at a time, with the question and its options; the map frames the unit and its choices. Pick with 1 to 9 (or click a choice, or its disc on the map), N for "None of these", "Close it" or "Dismiss", then Enter to confirm or Escape to cancel; the next decision opens by itself. ↑ ↓ (or J K) move through the list. The number waiting shows in the tab's title. The command post answers for the unit, as on a radio net, and the feed says "CP answered"; the transmitter no longer answers, so this is where a question closes [178, 208]. The first answer stands. A short spoken answer is heard [251]: when the unit says "two" or "the metro station", the decision shows the words and that choice already picked, and Enter confirms it; Escape steps back. Nothing is chosen without the confirm. A unit's next report closes the question it left open, and the feed says "Overtaken" [241]. A question with no choices ("Where is it?") is asked by radio, then closed by the unit's next report or with Close it [242].
 
-The coordinator keeps each mission in `.data/sessions/<code>.jsonl`: its opening, joins, reports, answers, tracks and units placed by hand and end, one line each, never edited. A deleted mission's file moves to `.data/sessions/deleted/`. The live site keeps no record yet, so it has no missions, the browser page can report to it without one, and its command post stays empty [101].
+The coordinator keeps each mission in `.data/sessions/<code>.jsonl`: its opening, joins, reports, answers, tracks and units placed by hand and end, one line each, never edited. A deleted mission's file moves to `.data/sessions/deleted/`. Reports from the web page at `/` name no mission, so they are not saved.
 
 ## Layout
 
 ```
 transmitter/                               native transmitter app (own package.json and tooling)
 scenarios/, scripts/build-scenarios.mjs    scripted reports and the clip generator
+scenarios/missions/, scripts/demo.mjs      npm run demo: typed radio reports into a mission, no phone needed
+scripts/stt-server.mjs                     npm run stt: whisper.cpp's server for offline speech-to-text
 app/page.tsx, components/VoiceMapApp.tsx   one mobile-first page: map, talk button, ask-back card, log
 app/cp/, components/CommandPost.tsx        the command post: shared map, Decisions list, units, tracks, feed, replay; DecisionQueue.tsx, TrackTools.tsx, MissionPanel.tsx
 app/api/report/route.ts                    POST multipart: audio | text, lastPosition, clientTs, session

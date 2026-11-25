@@ -90,10 +90,9 @@ describe("provider mode", () => {
     expect(JSON.parse(init.body as string).options).toEqual({ temperature: 0, num_predict: 60, num_ctx: LOCAL_NUM_CTX });
   });
 
-  it("starts Ollama from the launcher at the context the requests name [254]", async () => {
+  it("starts Ollama in the setup steps at the context the requests name [254]", async () => {
     const { readFileSync } = await import("node:fs");
     const { LOCAL_NUM_CTX } = await import("../lib/providers/ollama");
-    expect(readFileSync("scripts/launcher/supervisor.mjs", "utf8")).toContain(`OLLAMA_CONTEXT_LENGTH: '${LOCAL_NUM_CTX}'`);
     expect(readFileSync("docs/setup.md", "utf8")).toContain(`OLLAMA_CONTEXT_LENGTH=${LOCAL_NUM_CTX} ollama serve`);
   });
 

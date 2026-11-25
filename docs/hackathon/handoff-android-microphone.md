@@ -3,12 +3,12 @@
 **Status, 21 Nov:** the local Expo-module fallback below is implemented and installed on a
 Galaxy S10. It records PCM WAV and sends Whisper's text to the offline coordinator. Do not
 install the PCM-stream library proposed below. Current setup is in the root README's
-[USB daily startup](../README.md#run-locally); Studio can stay closed.
+[USB daily startup](../../README.md#run-locally); Studio can stay closed.
 Two live town-hall reports reached the receiver correctly with base. Remaining runtime work:
 recognition accuracy, stale question cards and warm transcription timings with base and small;
 iOS was not tested in this change. The proposal below is retained until those checks finish.
 
-Written Friday 20 November, evening (Paris time), for the coding agent on the teammate's computer: an 8 GB MacBook Air with an Android phone. When the work is done, fold what is still true into `transmitter/README.md` and delete this file and its row in [README.md](README.md).
+Written Friday 20 November, evening (Paris time), for the coding agent on the teammate's computer: an 8 GB MacBook Air with an Android phone. When the work is done, fold what is still true into `transmitter/README.md` and delete this file and its row in [README.md](../README.md).
 
 ## Read this first: no Mistral key is needed
 
@@ -20,9 +20,9 @@ On Android, in the phone modes ("Phone: base" and "Phone: small"), hold-to-talk 
 
 ## Why it fails today
 
-- [transmitter/App.tsx:419](../transmitter/App.tsx): `const phoneStt = sttMode !== "server" && Platform.OS === "ios";`. On Android the microphone always takes the server path.
-- The server path records AAC with expo-audio (`SPEECH_RECORDING`, [transmitter/src/sources.ts:43](../transmitter/src/sources.ts)) and sends it as `audio/mp4`. Offline mode answers 501; hosted mode needs a key.
-- expo-audio records on Android with MediaRecorder, which writes only compressed audio (AAC, AMR, Opus). It cannot write WAV, so `SPEECH_RECORDING_WAV` ([sources.ts:57](../transmitter/src/sources.ts)) is iOS only [75].
+- [transmitter/App.tsx:419](../../transmitter/App.tsx): `const phoneStt = sttMode !== "server" && Platform.OS === "ios";`. On Android the microphone always takes the server path.
+- The server path records AAC with expo-audio (`SPEECH_RECORDING`, [transmitter/src/sources.ts:43](../../transmitter/src/sources.ts)) and sends it as `audio/mp4`. Offline mode answers 501; hosted mode needs a key.
+- expo-audio records on Android with MediaRecorder, which writes only compressed audio (AAC, AMR, Opus). It cannot write WAV, so `SPEECH_RECORDING_WAV` ([sources.ts:57](../../transmitter/src/sources.ts)) is iOS only [75].
 - Whisper needs 16 kHz, mono, 16-bit PCM. The model is not the problem: the same `ggml-base-q5_1` and `ggml-small-q5_1` files run on Android, and scenario clips (WAV files) already transcribe on Android in the phone modes.
 
 ## The fix
@@ -82,7 +82,7 @@ Why this library:
    - `buffer` is already a dependency.
    - 15 s of audio is 480 KB, so memory is not a concern.
 
-4. **Transcribe the buffer.** In [transmitter/src/stt.ts](../transmitter/src/stt.ts), add `transcribePcmOnPhone(mode, pcm, opts)` beside `transcribeOnPhone` (line 69). It should share the model loading and return the same `PhoneTranscript`, but call `loaded.context.transcribeData(pcm, { language, prompt, maxThreads: 4 })`.
+4. **Transcribe the buffer.** In [transmitter/src/stt.ts](../../transmitter/src/stt.ts), add `transcribePcmOnPhone(mode, pcm, opts)` beside `transcribeOnPhone` (line 69). It should share the model loading and return the same `PhoneTranscript`, but call `loaded.context.transcribeData(pcm, { language, prompt, maxThreads: 4 })`.
    - Pass the 16-bit buffer as it is. `whisper.rn`'s doc comment says "float32 PCM", but the native code reads 16-bit little-endian PCM (`decodePcm16` in `node_modules/whisper.rn/cpp/jsi/RNWhisperJSI.cpp`, line 1034), and its own live transcriber passes 16-bit buffers.
    - If `transcribeData` gives trouble, put a 44-byte WAV header in front of the PCM and write it to the cache with expo-file-system's `File` [64]. Then call the existing `transcribeOnPhone` with that file. It costs one file write and uses the path already proven on scenario clips.
 
@@ -121,7 +121,7 @@ Do not decode the AAC file into PCM on the phone. That needs a decoder module, w
   ```
 
   The app finds the coordinator at the address it loaded its code from (`coordinatorOnThisComputer` in `App.tsx`), so over `adb reverse` both are `localhost`. Run these again after reconnecting the cable. Same Wi-Fi with the Mac's address also works. Plain `http://` is already allowed on Android (`usesCleartextTraffic` in `app.json`).
-- **Daily use:** `npm run build`, `npm start`, `npm stop`. Direct component commands remain in [setup.md](setup.md#advanced-console-use).
+- **Daily use:** `npm run build`, `npm start`, `npm stop`. Direct component commands remain in [setup.md](../setup.md#advanced-console-use).
 - **The Whisper model downloads once** when a phone mode is first chosen (56 MB for base, 181 MB for small), so the phone needs the internet that one time.
 - **Open a mission** on the receiver (`http://localhost:3117/receiver`, Missions menu, Vincennes) and join it from the phone. Reports need a mission [114].
 
@@ -134,11 +134,11 @@ Do not decode the AAC file into PCM on the phone. That needs a decoder module, w
 - `npx tsc --noEmit` passes in `transmitter/`. `npm test`, `npx tsc --noEmit` and `npm run lint` pass at the root.
 - Docs updated in the same commit as the code:
   - `transmitter/README.md`: the "iOS only for now" lines under the speech-to-text results.
-  - [plan.md](plan.md), Transmitter: remove "record uncompressed audio on Android" from Still to do.
-  - [setup.md](setup.md): the Android installation instructions. Also write down what it took to build on Android on this computer, with a check after each step.
-  - [architecture.md](architecture.md): "Not yet on Android" in the transmitter row.
+  - [plan.md](../plan.md), Transmitter: remove "record uncompressed audio on Android" from Still to do.
+  - [setup.md](../setup.md): the Android installation instructions. Also write down what it took to build on Android on this computer, with a check after each step.
+  - [architecture.md](../architecture.md): "Not yet on Android" in the transmitter row.
 - New lines at the end of `DECISIONS.md`: the library (or the fallback) and why, and the measured phone times. Check the last number first, because other sessions append too.
-- This file deleted, and its row in [README.md](README.md) removed.
+- This file deleted, and its row in [README.md](../README.md) removed.
 
 ## Rules that apply here
 

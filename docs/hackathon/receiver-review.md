@@ -72,7 +72,7 @@ After the changes the script found no text under 4.5:1 in the live, replay, ende
 
 ## Decisions for Alex
 
-"Hardware" marks a decision that waits on what the mentors say about how reports reach the base ([open-questions.md](open-questions.md), question 1 for Lysk).
+"Hardware" marks a decision that waits on what the mentors say about how reports reach the base ([open-questions.md](../open-questions.md), question 1 for Lysk).
 
 1. **Who answers an open question? (Hardware.)** Today the question waits until the speaker taps a choice on a phone. If speakers have only a radio, nobody can tap, and the question stays open for ever. Options: (a) leave it view-only; (b) let the operator click a choice on the receiver, which calls the existing `POST /api/answer`, and add who answered to the log (a change to `lib/reports/types.ts`); (c) take a spoken answer ("the second one") as the unit's next report. Recommendation: (b) if the answer is "radio". It is one afternoon, and it is the largest gap on this page for a radio net. **Settled, 21 Nov:** (b), built with the track tools [178]. The command post answers after a confirm, the answer entry keeps `by: "CP"`, and the feed says "CP answered".
 2. **Where open questions sit. (Hardware.)** A question shows in its unit's row and in the feed, where newer reports push it down. Options: (a) leave it; (b) keep open questions at the top of the feed; (c) a "Questions" block of their own above the feed, with the choices in large type. Recommendation: (b) now, it is small; (c) together with decision 1 if the operator has to read questions out.

@@ -1,19 +1,19 @@
 # Handoff: tuning the intent-extraction prompt
 
-Written Saturday 21 November, late morning (Paris time), updated after the compass-only tune, for whoever picks up the prompt work next, person or coding agent. The work is ongoing, not a one-off: when it settles, fold what is still true into [evals/README.md](../evals/README.md) and delete this file and its row in [README.md](README.md).
+Written Saturday 21 November, late morning (Paris time), updated after the compass-only tune, for whoever picks up the prompt work next, person or coding agent. The work is ongoing, not a one-off: when it settles, fold what is still true into [evals/README.md](../../evals/README.md) and delete this file and its row in [README.md](../README.md).
 
 ## What this work is
 
-The extraction prompt (`systemPrompt()` in [lib/providers/extractor.ts](../lib/providers/extractor.ts)) turns a transcript into an intent: what kind of report, which landmark, which relation, how far, which way. The resolver then places the intent against the gazetteer. The model never gives coordinates [AGENTS.md rules].
+The extraction prompt (`systemPrompt()` in [lib/providers/extractor.ts](../../lib/providers/extractor.ts)) turns a transcript into an intent: what kind of report, which landmark, which relation, how far, which way. The resolver then places the intent against the gazetteer. The model never gives coordinates [AGENTS.md rules].
 
 The goal is fewer **wrong pins**: a pin or a heading on the map at a place the speaker did not mean. A question back is safe; a wrong pin is not, because the operator has nothing to tell them it is wrong. Every change is measured on a fixed set of cases, on both models, before and after.
 
 ## Read first, in this order
 
-1. [evals/README.md](../evals/README.md): the eval, the case format, how to read a run, the scores so far, the open questions.
-2. [evals/journal.md](../evals/journal.md): every attack and tune so far, what it found, what was accepted.
-3. [.agents/skills/prompt-attack/SKILL.md](../.agents/skills/prompt-attack/SKILL.md) and [.agents/skills/prompt-tune/SKILL.md](../.agents/skills/prompt-tune/SKILL.md): the two procedures. A coding agent loads them as skills (`prompt-attack`, `prompt-tune`); a person follows them by hand.
-4. Decisions [153], [159], [169] and [179] in [DECISIONS.md](../DECISIONS.md): why the eval works the way it does, and the two tunes.
+1. [evals/README.md](../../evals/README.md): the eval, the case format, how to read a run, the scores so far, the open questions.
+2. [evals/journal.md](../../evals/journal.md): every attack and tune so far, what it found, what was accepted.
+3. [.agents/skills/prompt-attack/SKILL.md](../../.agents/skills/prompt-attack/SKILL.md) and [.agents/skills/prompt-tune/SKILL.md](../../.agents/skills/prompt-tune/SKILL.md): the two procedures. A coding agent loads them as skills (`prompt-attack`, `prompt-tune`); a person follows them by hand.
+4. Decisions [153], [159], [169] and [179] in [DECISIONS.md](../../DECISIONS.md): why the eval works the way it does, and the two tunes.
 
 ## Where things are
 
@@ -33,7 +33,7 @@ The goal is fewer **wrong pins**: a pin or a heading on the map at a place the s
 ## Setup
 
 - **Hosted model** (Mistral Small): `MISTRAL_API_KEY` in `.env.local`. The script loads it itself.
-- **Local model** (Ministral 3 3B): Ollama running with `ministral-3:3b` ([setup.md](setup.md#install-once)). No key.
+- **Local model** (Ministral 3 3B): Ollama running with `ministral-3:3b` ([setup.md](../setup.md#install-once)). No key.
 - Check both: `npm run eval:extract -- --only s-v1 --no-save --no-compare`, and the same with `PROVIDER_MODE=local` in front. Each should print `ok s-v1`.
 
 ## Commands
@@ -78,9 +78,9 @@ Done: the eval, the skills, two attacks, two sets of cases from code changes, an
 5. **Attack the rules with few cases:** crossings, lemmas on the 3B model, distances in words.
 6. **Two compass words in one track report on the 3B model:** a way and a heading ("Two trucks to the north, moving west.", `t-compass-heading`; `a-compass-*`), and `t-trucks`, which lost its heading in the compass-only tune. Code checks the words since [186], so this is about the fields, not the pin. On hosted, `a-compass-6` asks instead of placing since that tune [196].
 
-Not a prompt cycle, but waiting on one: "I'm at Vincent station." pins a school named Vincent d'Indy through the resolver ([known-gaps.md](known-gaps.md)). Add it as a case once the resolver asks back there ([evals/README.md](../evals/README.md#open) has the details).
+Not a prompt cycle, but waiting on one: "I'm at Vincent station." pins a school named Vincent d'Indy through the resolver ([known-gaps.md](../known-gaps.md)). Add it as a case once the resolver asks back there ([evals/README.md](../../evals/README.md#open) has the details).
 
-Questions for Alex before they are acted on, also in [evals/README.md](../evals/README.md#open):
+Questions for Alex before they are acted on, also in [evals/README.md](../../evals/README.md#open):
 - May the model repair a misheard name ("bear oh" to "Bérault")?
 - Should `p-two-places` and `fr-leaving` get a start position, which changes their expected outcome?
 

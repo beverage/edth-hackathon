@@ -43,17 +43,21 @@ evals/                      extraction and reply evals: cases, baselines, saved 
 transmitter/                native app (Expo); its own package.json, tooling and AGENTS.md
 tests/                      vitest
 .github/workflows/ci.yml    CI: the checks below, a build and the transmitter's types, on every push to main and every pull request
-docs/                       design docs, one Markdown file per topic; start at docs/README.md
+docs/                       design docs, one Markdown file per topic; start at docs/README.md; docs/hackathon/ keeps the weekend's working papers
+scripts/demo.mjs            npm run demo: typed radio reports into a mission, from scenarios/missions/
 ```
 
 ## Commands
 
 ```bash
-npm install
-npm run build              # build changed components and load phone app when needed
-npm start                  # restart servers; leave launching phone app to the person
-npm stop                   # stop project processes, including servers and connected phone app
-npm run dev -- -p 3117      # port 3117, not 3000; hosted mode, needs MISTRAL_API_KEY
+npm ci
+npm run build               # production build of the coordinator (next build)
+npm start                   # the built coordinator on 3117; hosted mode, needs MISTRAL_API_KEY
+PROVIDER_MODE=local npm start   # offline mode: needs Ollama, and npm run stt for spoken reports
+npm run stt                 # offline speech-to-text (whisper.cpp) on 3118; fetches its model once
+npm run demo                # typed radio reports into a new mission on a running coordinator; no phone
+npm run phone               # the phone app's code server (Metro) on 8082
+npm run dev -- -p 3117      # port 3117, not 3000; hot reload; hosted mode, needs MISTRAL_API_KEY
 PROVIDER_MODE=local npm run dev -- -p 3117   # offline mode: no key, needs Ollama (docs/setup.md)
 npm test                    # unit tests; no network or key needed
 npx tsc --noEmit            # type-check (excludes transmitter/)
@@ -66,7 +70,7 @@ npm run eval:outcomes -- --check   # check the eval's expected outcomes against 
 npm run eval:replies        # score the reader of replies to a question (docs/ask-back.md); key or PROVIDER_MODE=local
 npm run eval:callsigns      # score the call-sign reader (docs/callsigns.md); no model, also in npm test
 npm run eval:requests       # score the recon-request reader (docs/tracks.md); no model, also in npm test
-npm run eval:stage          # score the stage lines against a running coordinator (docs/stage-test-plan.md); not in npm test
+npm run eval:stage          # score the stage lines against a running coordinator (docs/hackathon/stage-test-plan.md); not in npm test
 ```
 
 Run `npm test`, `npx tsc --noEmit` and `npm run lint` before calling a task done. If you changed `lib/geo/types.ts`, also run `npx tsc --noEmit` in `transmitter/`. CI runs the same checks after a push (`CONTRIBUTING.md`, CI); it does not replace running them first.
@@ -85,7 +89,7 @@ A Mistral key is optional. Hosted mode (the default) calls Mistral and needs `MI
 - The hooks in `.agents/hooks/` refuse reading `.env` files, writing keys into files, deleting outside the repo and worktrees outside `.claude/worktrees/`. Do not work around a refusal; ask the person to run the command.
 - Secrets live in env vars only. The repo is public.
 - `lib/geo/types.ts` and the fields of `POST /api/report` are a contract with the transmitter and the command post. Change them on purpose, and say so in the decision line.
-- Do not deploy to production, push, or move the `prior-work-fri-1800` tag unless the person you are working for asks.
+- Do not deploy to production, push, or move the `prior-work-fri-1800` or `deadline-sun-1200` tags unless the person you are working for asks.
 - The extraction prompt (`systemPrompt()` in `lib/providers/extractor.ts`) changes only with an eval run before and after on both models, and no regression against `evals/baselines/` unless the person accepts it. The `prompt-tune` skill is the procedure; `prompt-attack` grows the cases.
 - Skills live in `.agents/skills/`, one folder each, so every agent reads the same ones.
 - Write user-facing text and docs in plain, short sentences, in the same style as `README.md` and `DECISIONS.md`.

@@ -66,5 +66,5 @@ next-env.d.ts
 # shared record of reports (lib/reports/store.ts)
 /.data/
 
-# Local launcher state, logs and prepared releases
+# State and logs of the removed launcher (decision 262), still in older checkouts
 /.run/

@@ -4,14 +4,14 @@ Six questions are for the team to settle; seventeen are for Lysk's mentors. When
 
 ## For the team
 
-To settle at the Saturday 08:00 kickoff ([kickoff.md](kickoff.md)) where we can.
+To settle at the Saturday 08:00 kickoff ([kickoff.md](hackathon/kickoff.md)) where we can.
 
-1. **Priority for Saturday.** The shared map and replay are built, so the old choice is gone. Now: local mode (mandatory for the demo) against runs with real phones, evidence, and the pitch. A proposal is in [work-split.md](work-split.md).
-2. **Who owns the pitch.** One person on presentation and pitch from Saturday midday, or shared. Pre-selection starts on Saturday evening ([work-split.md](work-split.md#role-4-evidence-then-pitch)).
+1. **Priority for Saturday.** The shared map and replay are built, so the old choice is gone. Now: local mode (mandatory for the demo) against runs with real phones, evidence, and the pitch. A proposal is in [work-split.md](hackathon/work-split.md).
+2. **Who owns the pitch.** One person on presentation and pitch from Saturday midday, or shared. Pre-selection starts on Saturday evening ([work-split.md](hackathon/work-split.md#role-4-evidence-then-pitch)).
 3. **Deploy access.** Dropped on 23 November: the live site is paused, so nothing deploys [261].
 4. **Mistral key.** One shared team key, or each person their own.
 5. **Licence.** The repo is public with no licence file. The hackathon's FAQ says all IP stays with the team, and that a partner company may set other terms for its own challenge; Lysk's are unknown (question 15 below).
-6. **The command post's open decisions.** The Saturday-night review left a list for Alex ([receiver-review.md](receiver-review.md)). Decision 1, who answers an open question, is settled: the command post can [178]. Several of the rest wait on question 1 below.
+6. **The command post's open decisions.** The Saturday-night review left a list for Alex ([receiver-review.md](hackathon/receiver-review.md)). Decision 1, who answers an open question, is settled: the command post can [178]. Several of the rest wait on question 1 below.
 
 ## For Lysk
 
@@ -100,5 +100,5 @@ History, and the rest:
 ### After the talk
 
 - Write each answer down in their words, then add one line per answer to [DECISIONS.md](../DECISIONS.md) and remove the question here.
-- Tell the team the answer to question 1 at once: it moves people between roles ([work-split.md](work-split.md#when-to-switch-people)).
+- Tell the team the answer to question 1 at once: it moves people between roles ([work-split.md](hackathon/work-split.md#when-to-switch-people)).
 - Note what they reacted to when they saw the command post. That goes into the pitch.

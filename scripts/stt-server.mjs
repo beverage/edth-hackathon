@@ -1,8 +1,9 @@
 // Speech-to-text on the coordinator in offline mode: prepares regular turbo and light base models
 // and the Silero voice-activity model once into models/ (git-ignored), checksums checked, then runs
 // whisper.cpp's whisper-server on this computer only.
-// Build: npm run build. Start/stop: managed with the other servers.
-// Advanced: npm run start:stt runs this component directly after Build prepares it.
+// npm run stt starts it, and fetches its model the first time (internet needed once).
+// npm run stt:prepare fetches both models ahead, for a computer that will be offline.
+// WHISPER_PROFILE=light uses Whisper base (about 60 MB) instead of turbo, for a computer short of memory.
 // WHISPER_MODEL_FILE copies the regular turbo model from a file already on disk instead of downloading it.
 // WHISPER_URL sets the port, as the coordinator reads it (default http://127.0.0.1:3118).
 import { spawn, spawnSync } from "node:child_process";
@@ -74,7 +75,7 @@ async function prepare(model) {
       if (!response.ok || !response.body) throw new Error(`${model.name} download failed: HTTP ${response.status}`);
       await pipeline(Readable.fromWeb(response.body), createWriteStream(temporary));
     }
-    if (!(await valid(model, temporary))) throw new Error(`${model.name} checksum failed; run npm run build again.`);
+    if (!(await valid(model, temporary))) throw new Error(`${model.name} checksum failed; run it again.`);
     await rename(temporary, target);
     return fileURLToPath(target);
   } finally {
@@ -89,15 +90,11 @@ try {
     console.log("Coordinator speech models ready: regular and light (checksums verified).");
     process.exit(0);
   }
-  if (!preparing) {
-    for (const model of [WHISPER, VAD]) {
-      if (!(await valid(model, new URL(model.file, directory)))) throw new Error(`${model.name} is missing or invalid. Run npm run build first.`);
-    }
-  }
-  const whisper = await prepare(WHISPER);
-  const vad = await prepare(VAD);
+  // The tools first, so a missing one is said before a 574 MB download.
   if (!has("whisper-server", "--help")) throw new Error("whisper-server not found. Install whisper.cpp (macOS: brew install whisper.cpp); see docs/setup.md.");
   if (!has("ffmpeg", "-version")) throw new Error("ffmpeg not found. Install ffmpeg (macOS: brew install ffmpeg); see docs/setup.md.");
+  const whisper = await prepare(WHISPER);
+  const vad = await prepare(VAD);
   console.log(`${WHISPER.name} and Silero VAD ready (checksums verified). Starting whisper-server on 127.0.0.1:${port}.`);
   // --convert: ffmpeg turns the browser's webm and the phone's m4a into the WAV Whisper reads.
   const args = ["-m", whisper, "--host", "127.0.0.1", "--port", port, "--convert", "--vad", "--vad-model", vad];

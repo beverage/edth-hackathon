@@ -52,28 +52,37 @@ held for the operator, or not sent; questions stay on the command post.
 
 ## Run it
 
-From the repository root:
+Start the coordinator first ([setup](../docs/setup.md)). Tools and signing for each phone are
+in [setup](../docs/setup.md#4-the-transmitter-on-a-phone). Then, once, from the repository root:
 
 ```bash
-npm run build
-npm start
-npm stop
+npm ci --prefix transmitter
 ```
 
-Use `npm start light` for lower memory use; plain `npm start` selects regular mode. Connect only the phone being used. Tools and signing are in
-[setup](../docs/setup.md). The host remembers the phone. iPhone compilation requires a
-Mac with Xcode; free Apple provisioning expires after seven days. No EAS.
+Build the app and install it on the connected phone, from `transmitter/`:
 
-Advanced developers can still run the component commands listed in
-[setup](../docs/setup.md#advanced-console-use). Phone JavaScript is served by Metro;
-only native changes need a new native binary. Voice-to-text runs on the coordinator.
+```bash
+LANG=en_US.UTF-8 npx expo run:ios --device
+```
+
+or `npx expo run:android`. CocoaPods fails without the UTF-8 locale (decision 66). iPhone
+builds need a Mac with Xcode; free Apple provisioning expires after seven days. No EAS.
+
+After that the app loads its code from Metro, the code server, on port 8082. From the
+repository root:
+
+```bash
+npm run phone
+```
+
+Only native changes need a new build. Voice-to-text runs on the coordinator.
 
 ## Which coordinator it talks to
 
-The server startup supplies the coordinator address. Android USB uses loopback plus forwarding;
-iPhone uses the host’s `.local` name. Direct development builds can still infer the host
-from Metro, and `EXPO_PUBLIC_SERVER_URL` overrides that default. A manually selected host
-is remembered. There is no automatic fallback to the public site.
+Both phones search the local network for coordinators (below). A development build can also
+infer the host from Metro, and `EXPO_PUBLIC_SERVER_URL` overrides that default. Over USB, an
+Android phone reaches the Mac's ports after `adb reverse tcp:3117 tcp:3117` and
+`adb reverse tcp:8082 tcp:8082`. A manually selected host is remembered.
 On a phone, sign with your own Apple ID: put `APPLE_TEAM_ID` and your own `TRANSMITTER_BUNDLE_ID`
 in `transmitter/.env.local` (ignored by git), because `dev.voicetomap.transmitter` belongs to
 Alex's team (`app.config.ts`). Expo's commands and `npm run phones` read that file; a value set in
@@ -89,7 +98,7 @@ cd transmitter && npm run phones
 
 It updates every iPhone connected to the Mac, by cable or on the same network, and opens the
 app on Metro there. A development build loads its code from Metro, so most updates need no
-install: after a change to `App.tsx` or `src/`, or a pull, the script only reopens the app. The managed daily Build command restarts Metro when JavaScript changes.
+install: after a change to `App.tsx` or `src/`, or a pull, the script only reopens the app.
 
 The app is built and installed again only when its native side changed: a native package,
 `app.json`, `app.config.ts` and the variables it reads, or Expo itself. Expo's fingerprint of
@@ -147,12 +156,12 @@ an older build finds coordinators through the addresses it already knows [248, 2
 
 Microphone and scenario utterances send audio through the same report path. The phone
 records 16 kHz mono AAC/m4a and sends it with the selected language; it does not load a
-speech model or transcribe. In local mode, the coordinator uses Whisper turbo by default, base with `npm start light`
+speech model or transcribe. In local mode, the coordinator uses Whisper turbo by default, base with `WHISPER_PROFILE=light`,
 through whisper-server with Silero VAD and ffmpeg conversion. Hosted mode uses Mistral.
 A report counts as successful only after the coordinator acknowledges saving it.
 
-Build prepares the host’s models. Start/Stop manage the speech server with the other
-components. The native package dependencies are retained for compatibility with installed
+`npm run stt` runs the speech server on the coordinator, and fetches its model the first
+time. The native package dependencies are retained for compatibility with installed
 builds; the active recording and scenario paths no longer import the phone transcriber.
 No speech mode, model download or test-clip selector is needed on the phone.
 
@@ -233,6 +242,3 @@ coordinator, and the operator's calls do not reach the phone yet [208]. "Play cl
 writes `scenarios/index.ts` here. "Play scenario" sends every step and marks each one ✓ or ✗
 against its expected answer.
 
-The native Expo launcher help uses `npm start` and mentions `npm start light`. Setup
-applies this wording after dependency installs; Build includes it in the native fingerprint
-and rebuilds the phone binary when it changes. A JavaScript reload cannot update this text.

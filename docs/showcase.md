@@ -5,7 +5,7 @@ The four pictures at the top of the [README](../README.md#in-pictures), in [imag
 ## How they were made
 
 - **A coordinator of its own,** in offline mode: `PROVIDER_MODE=local REPORT_STORE=file npx next dev -p 3131`, with Ollama and `ministral-3:3b`.
-- **Typed radio reports,** sent to `POST /api/report` with `text`, `session` and `language` and no call sign, as the stage eval sends them ([stage-test-plan.md](stage-test-plan.md)). The coordinator reads the call sign from the words. Every report went through the model and the resolver; nothing was written to a log by hand.
+- **Typed radio reports,** sent to `POST /api/report` with `text`, `session` and `language` and no call sign, as the stage eval sends them ([stage-test-plan.md](hackathon/stage-test-plan.md)). The coordinator reads the call sign from the words. Every report went through the model and the resolver; nothing was written to a log by hand.
 - **One mission at a time:** open it, send its lines, take its pictures at once, end it. Two live missions at once put a "Reports received in …" note on the page. Units fade after 3 minutes of silence, so each mission's lines took under a minute.
 - **Headless Chrome** at 1600 × 1000 and 2× pixel density, over the DevTools protocol, about 10 s after the page opens.
 - **Reduced to 1600 px wide JPEG,** quality 88, no colour subsampling. Each is under 600 KB. These are JPEG, not PNG as [the docs](README.md#how-these-docs-work) ask: at 256 colours or fewer, BRAVO 2's purple turned into CHARLIE 3's pink [260].

@@ -259,7 +259,7 @@ Still open, for Alex:
 
 - **The word.** "Track" is in. "Object" was the other candidate. The French "Piste" and the Ukrainian "Об'єкт" need a native check.
 - **Where a range comes from** (step 5): only when said, set at the base, or a table by kind in code.
-- **Operator edits:** built [177, 178]. The command post places a track (click, drag or a place by name), changes what it is, moves it, marks it gone and puts it back, and can answer a unit's open question. This settles decision 1 of the [receiver review](receiver-review.md). See [tracks](tracks.md#placed-by-the-command-post).
+- **Operator edits:** built [177, 178]. The command post places a track (click, drag or a place by name), changes what it is, moves it, marks it gone and puts it back, and can answer a unit's open question. This settles decision 1 of the [receiver review](hackathon/receiver-review.md). See [tracks](tracks.md#placed-by-the-command-post).
 - **Unit colours:** the fifth unit colour is a pink-red (`#e0367a`). Hostile tracks are red, so a fifth call sign would be a red-ish friendly dot. Not changed yet.
 - **A demo script with tracks.** Written: `scenarios/vincennes-tracks.json`, 11 made-up steps in Vincennes ([README](../README.md#vincennes-with-tracks)). Still to choose: whether it, or a short version of it, goes into the Demo Day run.
 
@@ -279,7 +279,7 @@ flowchart LR
         subgraph MAC["MacBook, M1 Pro"]
             CO["Coordinator<br/>PROVIDER_MODE=local"]
             OLL["Ollama<br/>ministral-3:3b"]
-            WHS["Whisper turbo by default, base with `npm start light`<br/>speech-to-text on the coordinator"]
+            WHS["Whisper turbo by default, base with WHISPER_PROFILE=light<br/>speech-to-text on the coordinator"]
             ST[("File store<br/>.data/sessions/")]
             RX["Command post<br/>on the Mac's screen"]
             TILES[("Saved tiles, fonts, icons<br/>and a local map style")]
@@ -306,7 +306,7 @@ Track C is built [239]: in local mode both maps read the copy saved on the Mac b
 | A | Serve the app from the MacBook over HTTPS the phones accept | 1 to 3 h |
 | A | Prove on iOS and Android, mobile data off, that the microphone opens | 0.5 h |
 | B. Models | The `PROVIDER_MODE` switch | done |
-| B | Local speech-to-text: whisper-server with quantized turbo (base with `npm start light`), VAD and ffmpeg, about 635 MB of host models for both options and VAD | integrated; live validation pending setup |
+| B | Local speech-to-text: whisper-server with quantized turbo (base with `WHISPER_PROFILE=light`), VAD and ffmpeg, about 635 MB of host models for both options and VAD | integrated; live validation pending setup |
 | B | Local extraction: Ministral 3 3B through Ollama with the same schema, 3 GB. Built; the prompt is not tuned for it yet | done |
 | C. Offline map | Save tiles, fonts and icons locally, plus a local map style. Built 22 Nov: `npm run basemap -- <area>` | done |
 | D. Evidence | Record ten real clips, some with hall noise | 0.5 h |
@@ -338,7 +338,7 @@ Open calls for Alex: whose phones (ours only, or any phone); travel router or th
 
 ## Transmitter
 
-- **Startup:** Build changed components with `npm run build`; `npm start` restarts the servers and `npm stop` stops processes. Open the phone app and tap Connect. Start/Stop mission controls are on the receiver. Hosts lists discovered coordinators; the phone automatically follows the newest running mission; developer overrides and direct console commands remain. See [setup](setup.md).
+- **Startup:** start the coordinator and, for the phone, `npm run phone` ([setup](setup.md)). Open the phone app and tap Connect. Start/Stop mission controls are on the receiver. Hosts lists discovered coordinators; the phone automatically follows the newest running mission; developer overrides and direct console commands remain. See [setup](setup.md).
 - **Scope:** phone voice-to-text is replaced by compressed audio capture and coordinator transcription. Keep the simple Connect and automatic mission flow.
 
 - **Merged:** microphone and scenarios send compressed audio to the coordinator. Both phones use expo-audio recording; no phone model is prepared or installed. Existing native dependencies remain compatible with installed builds. See [transmitter/README.md](../transmitter/README.md) for historical comparisons and the pending live check.
