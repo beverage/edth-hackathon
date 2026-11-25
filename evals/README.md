@@ -4,7 +4,7 @@ Checks how well the model turns a transcript into an intent and, with `--resolve
 
 The call-sign eval (`callsigns.cases.json`, `npm run eval:callsigns`) is separate and needs no model: see [docs/callsigns.md](../docs/callsigns.md#the-eval). So is the recon-request eval (`requests.cases.json`, `npm run eval:requests`): see [docs/tracks.md](../docs/tracks.md#recon-requests-and-tasking). `callsigns.signoff-limits.json` holds the held-out cases for a call sign at the end that the reader cannot tell apart; it is a record, not a gate.
 
-The stage eval (`stage.cases.json`, `npm run eval:stage`) is the other way round: it checks the whole pipeline on a few lines. It sends each line of the pitch's script to a running coordinator as a radio report, typed or as a clip in a synthetic voice, and scores the reply and the mission's log. It needs a coordinator in offline mode, so it is not in `npm test`: see [docs/stage-test-plan.md](../docs/stage-test-plan.md#the-passes).
+The stage eval (`stage.cases.json`, `npm run eval:stage`) is the other way round: it checks the whole pipeline on a few lines. It sends each line of the pitch's script to a running coordinator as a radio report, typed or as a clip in a synthetic voice, and scores the reply and the mission's log. It needs a coordinator in offline mode, so it is not in `npm test`: see [docs/stage-test-plan.md](../docs/hackathon/stage-test-plan.md#the-passes).
 
 ```bash
 npm run eval:extract                              # hosted Mistral, needs MISTRAL_API_KEY in .env.local
@@ -74,7 +74,7 @@ Two skills, adapted from levelang's, drive the work. They live in `.agents/skill
 - **`prompt-attack <rule>`** writes 5 to 10 reports built to break one rule, has a second, independent reading check the expected answers, runs them three times, and adds the confirmed ones as `adversarial` cases. It never edits the prompt.
 - **`prompt-tune <rule>`** takes the baseline, diagnoses the rule's failures, edits `systemPrompt()`, runs the full corpus on both models, refuses regressions, and records the change in `DECISIONS.md` and the journal.
 
-Both write to [`journal.md`](journal.md): what was attacked or tuned, what was found, what was accepted as a model limit. [docs/handoff-prompt-tuning.md](../docs/handoff-prompt-tuning.md) has the whole process, where it stands and what is next.
+Both write to [`journal.md`](journal.md): what was attacked or tuned, what was found, what was accepted as a model limit. [docs/handoff-prompt-tuning.md](../docs/hackathon/handoff-prompt-tuning.md) has the whole process, where it stands and what is next.
 
 ## Scores
 

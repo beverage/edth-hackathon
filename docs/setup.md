@@ -1,191 +1,161 @@
-# Setup and daily use
+# Setup
 
-Install tools once. Daily use is Build, Start, Stop.
-Do not install large tools or download models on someone’s computer without asking first.
-Agents never read `.env` files or print keys. Setup does not push or deploy the live site.
+Setting up a computer step by step, with a check after each step. The coordinator runs in one of two modes: hosted, which calls Mistral and needs a key, or offline, where everything runs on this computer. The phone app is optional: typed reports and `npm run demo` need no phone.
 
-## Install once
+Do not install large tools or download models on someone's computer without asking first. Agents never read `.env` files or print keys.
 
-| Needed for | Tools |
-|---|---|
-| Everyone | Git, Node.js 24.3+ and npm; a current browser |
-| Local inference | Current Ollama and `ministral-3:3b` (about 3 GB on disk; about 4 GB of RAM once running, with the 8,192-token context and the areas' prompts kept [254]); whisper.cpp’s `whisper-server` and ffmpeg on PATH; Whisper turbo by default, base with `npm start light` and Silero VAD (about 635 MB for both speech models and VAD, checksum-verified by Build) |
-| Android builds | Android SDK Platform 37, Build-Tools 37.0.0, Platform-Tools, Command-line Tools, NDK 27.1.12297006, CMake 3.22.1; a JDK, such as Android Studio’s bundled JDK |
-| iPhone builds | macOS, Xcode, Command Line Tools, CocoaPods, Apple ID |
+## 1. The coordinator
 
-On Android, enable Developer options → USB debugging, connect a USB data cable, unlock,
-and approve debugging. Check: `adb devices -l` lists the phone as `device`.
-Android Studio supplies the tools but can stay closed during builds and daily use.
-On Windows, set `ANDROID_HOME` and `JAVA_HOME` if they differ from the normal Studio paths.
-
-On an iPhone, connect to the Mac, tap Trust, enable Developer Mode and allow local network
-access. Add your Apple ID in Xcode → Settings → Accounts. Export `APPLE_TEAM_ID` and your
-own `TRANSMITTER_BUNDLE_ID` before starting; do not change app.json for personal signing.
-Check: `xcrun devicectl list devices` lists the phone as available. With a free account,
-trust the developer under Settings → General → VPN & Device Management after installation.
-The install expires after seven days; expired signing needs a fresh signed native install
-(see advanced console use).
-
-From the repo root:
+You need Git, Node.js 24.3 or later with npm, and a current browser.
 
 ```bash
+git clone https://github.com/beverage/edth-hackathon.git
+cd edth-hackathon
 npm ci
-npm ci --prefix transmitter
-npm run setup --prefix transmitter
-ollama pull ministral-3:3b
-npm run basemap -- vincennes
+npm run build
 ```
 
-The last line saves the map for offline mode: the Vincennes tiles, fonts and icons from
-OpenFreeMap, 28 MB of download, into `public/basemap/`, which is not in git. Run it once on
-each computer, with internet, before Start. Run it again for `kyiv` (13 MB) and `izium`
-(6 MB), one area a run; the three are 75 MB on disk. Check: each run ends with "Done" and
-the areas saved so far. Without it the map uses OpenFreeMap when there is internet, and a
-plain background with the units when there is none.
+The build copies the map's worker, prepares the browser's speech runtime and tries to fetch a 77 MB Ukrainian voice for questions; without it the browser uses its own voice.
 
-The phone records compressed audio and sends it to the coordinator; no speech model is
-prepared or downloaded on the phone. Its setup command prepares the native launcher’s project-specific startup instructions. Existing native libraries stay compatible, so this change needs a JavaScript reload,
-not a native rebuild. Scenarios use their compressed audio through the same report path.
+Check: the build ends with a list of routes that includes `/cp`.
 
-For local speech, install whisper.cpp and ffmpeg once (on macOS: `brew install whisper.cpp ffmpeg`). Build prepares the pinned Whisper turbo, base and VAD models on the host, about 635 MB for both speech models and VAD.
-Ask before these system installs and large downloads. Start validates existing models and
-starts whisper-server; it does not download them. `WHISPER_MODEL_FILE` can provide a local
-copy of the pinned turbo model instead of a download.
+Then start it in one of the two modes below. Each serves the command post at `http://localhost:3117/cp` and keeps missions in `.data/sessions/`.
 
-The web build prepares the map worker and browser speech runtime, and tries to fetch a
-77 MB Ukrainian reply voice. If unavailable, the browser uses its system voice. Setup
-and model downloads need internet; runtime local transcription does not.
+### Hosted mode
 
-## Daily use
-
-From the project directory:
+Put your Mistral key in `.env.local` (copy `.env.example`), or export `MISTRAL_API_KEY` in the console. Never paste a key into chat or into a file in git.
 
 ```bash
-npm run build
 npm start
-npm stop
 ```
 
-- **Build** checks file contents and dependencies. It rebuilds changed components and loads
-  the phone app if changed or missing. No connected phone means only the coordinator is built.
-- **Start** stops existing project servers and starts all required servers, including local Whisper speech-to-text and the
-  phone’s code server. When ready, it prints the command-post URL and opens it; it does not
-  launch the phone app or build code.
-- **Stop** stops project components, the connected phone app, and the internal controller.
-  Mission logs and phone settings are kept. Closing a browser does not stop the servers.
+Check: `curl -s localhost:3117/api/health` answers with `"ready":true`.
 
-Use `npm start light` for lower memory use; plain `npm start` selects regular mode. Use one connected phone; it is remembered. Unlock and approve USB
-trust/debugging. After editing code, repeat Build, then Start. If a build stops a service,
-Start brings the servers back. A build with unchanged source reuses its output.
+### Offline mode
 
-On the phone, open Transmitter and tap **Connect** when the coordinator is detected.
-If no mission is running, **Waiting for mission** indicates it. On the command post press
-**Start mission**; the phone follows the newest running mission automatically, with no join step. **Stop mission** stops reports and keeps
-the mission log for replay. Restarting the servers preserves open missions.
+Nothing leaves this computer. Intent extraction runs on Ollama with `ministral-3:3b`, speech-to-text on whisper.cpp. Install the tools once; ask first, since the downloads come to about 4 GB:
 
-Hosts lists discovered reachable servers. The phone automatically follows the newest running mission, switching only between reports. Developer tools has a manual
-address override, scenarios, test clips and timings. The area comes from the mission.
-Voice-to-text is on the coordinator, with no phone provider/model controls.
+```bash
+brew install ollama whisper.cpp ffmpeg
+```
 
-Android USB uses reverse forwarding; Start restores it without launching the app. On an
-iPhone the app reaches the host’s `.local` name. Both phones also search the local network for
-coordinators themselves; after Connect the app follows that coordinator to a new address, so a Mac
-that macOS renamed, or that moved to another network, is found again. An Android phone off the
-cable needs a release build: `transmitter/README.md`, "An Android phone off the cable". iPhone builds still need Mac/Xcode and
-signing; free provisioning expires after seven days. Windows and physical-phone deployment
-paths need validation on the relevant hardware. Offline inference works without internet,
-and so does the map for an area saved with `npm run basemap -- <area>`. The map's corner says
-"Map saved on this computer" when it is in use. `BASEMAP=hosted` or `BASEMAP=local` before
-Start picks the map whatever the mode.
+That is macOS. On Linux or Windows, install Ollama from ollama.com and put whisper.cpp's `whisper-server` and `ffmpeg` on the PATH. Only macOS has been checked.
 
-## Advanced console use
+Then use three consoles.
 
-Stop the managed servers before running a component directly. Ctrl+C stops that console’s
-component. The three normal commands above remain the daily procedure.
-
-| Component | Direct command |
-|---|---|
-| Web build | `npm run build:web` |
-| Coordinator | `npm run start:coordinator` |
-| Ollama | `npm run start:ollama` |
-| Local speech-to-text | `npm run start:stt` (after Build prepares models) |
-| Phone code server | `npm run start:phone` |
-| Web development server | `npm run dev -- -p 3117` |
-| Save the map for offline mode | `npm run basemap -- vincennes` (then restart the coordinator) |
-
-`npm start` selects regular mode: Whisper large-v3-turbo and a resident Ollama model.
-`npm start light` selects Whisper base and releases Ollama after 30 seconds of inactivity;
-the next report reloads it, adding latency. Base may recognize speech less accurately.
-The choice applies to that start only; the next plain Start returns to regular mode.
-Build prepares both speech models once, so changing mode needs only Start.
-
-The remembered provider mode is local. Keys never belong in chat, launcher configuration
-or Git. Direct coordinator commands can use `.env.local` if needed.
-
-For local-only Ollama in a macOS console:
+**Ollama.** If the Ollama app is already running, skip this line.
 
 ```bash
 OLLAMA_NO_CLOUD=1 OLLAMA_KEEP_ALIVE=-1 OLLAMA_CONTEXT_LENGTH=8192 ollama serve
 ```
 
-The coordinator asks Ollama for a context of 8,192 tokens on every call, so the extraction
-prompt (about 4,560 tokens) is never cut, however Ollama was started. Starting Ollama at the same
-size saves one reload of the model at the first report. At 4,096, Ollama cut the prompt to
-2,051 tokens without an error, and `.run/launcher.log` said `truncating input prompt` (decision 254).
+Once, in another console: `ollama pull ministral-3:3b` (about 3 GB on disk, about 4 GB of memory when running).
 
-On PowerShell set the corresponding `$env:` variables first. Native builds remain available
-in transmitter with `npm run android` or `npm run ios` (Mac only). For iOS set
-`LANG=en_US.UTF-8`, `APPLE_TEAM_ID` and `TRANSMITTER_BUNDLE_ID` first. After changing signing,
-regenerate the iOS project with Expo prebuild. No EAS is used.
+Check: `ollama list` shows `ministral-3:3b`.
 
-The optional `.run/config.json` stores the remembered phone and ports. Most users never
-edit it. Detailed logs are in `.run/launcher.log`. Build fingerprints and runtime process
-records live in `.run`; the coordinator’s normal build stays in `.next`, and mission data
-stays in `.data/sessions`. There are no release checkouts or separate launcher screen.
+The coordinator asks for a context of 8,192 tokens on every call, so the extraction prompt (about 4,560 tokens) is never cut, however Ollama was started. Starting Ollama at the same size saves one reload of the model at the first report. At 4,096, Ollama cut the prompt to 2,051 tokens without an error (decision 254).
+
+**Speech-to-text.**
+
+```bash
+npm run stt
+```
+
+The first run downloads Whisper large-v3-turbo (574 MB) and the Silero voice-activity model into `models/`, and checks their checksums. `WHISPER_MODEL_FILE` copies the turbo model from a file already on disk instead.
+
+Check: it prints `Starting whisper-server on 127.0.0.1:3118`. Typed reports work without it; spoken ones need it.
+
+**The coordinator.**
+
+```bash
+PROVIDER_MODE=local npm start
+```
+
+In PowerShell, set the variable first: `$env:PROVIDER_MODE="local"`, then `npm start`.
+
+Check: `curl -s localhost:3117/api/health` answers with `"ready":true`. At start the coordinator warms the model and each area's prompt, which takes up to a minute.
+
+**A computer short of memory** (8 GB): `WHISPER_PROFILE=light npm run stt` uses Whisper base (60 MB) instead of turbo, and `OLLAMA_KEEP_ALIVE=30s` in the Ollama line lets the model go after 30 seconds idle. The next report loads it again, a few seconds slower. Base hears less well.
+
+`LOCAL_EXTRACT_MODEL` picks another model (for example `ministral-3:8b`), `OLLAMA_URL` another address, `WHISPER_URL` another speech-to-text address.
+
+## 2. See it work
+
+With the coordinator running, in either mode:
+
+```bash
+npm run demo
+```
+
+It opens a mission in Vincennes and sends it 20 typed radio reports, through the same pipeline as spoken ones. Watch them arrive at `http://localhost:3117/cp`, or slow them down with `npm run demo -- --pace 4`. `kyiv`, `izium` or `all` picks other areas. The plans are in `scenarios/missions/`; what each one shows is in [showcase.md](showcase.md).
+
+Check: the command post shows seven units, the tracks they saw, and questions waiting in the Decisions list.
+
+## 3. The map with no internet
+
+```bash
+npm run basemap -- vincennes
+```
+
+This saves the Vincennes tiles, fonts and icons from OpenFreeMap into `public/basemap/`, which is not in git: 28 MB of download. Run it once on each computer, with internet, then restart the coordinator. Run it again for `kyiv` (13 MB) and `izium` (6 MB), one area a run; the three take 75 MB on disk.
+
+Check: each run ends with "Done" and the areas saved so far, and the map's corner says "Map saved on this computer".
+
+Without it, the map uses OpenFreeMap when there is internet, and a plain background with the units and tracks when there is none. `BASEMAP=hosted` or `BASEMAP=local` picks the map whatever the mode.
+
+To take a computer offline, run `npm run stt:prepare` and the three basemap runs first, with internet. `stt:prepare` fetches both speech models, turbo and base.
+
+## 4. The transmitter on a phone
+
+Optional. The phone app stands in for a radio: it records, and the coordinator does the rest. How to build and run it is in [transmitter/README.md](../transmitter/README.md).
+
+| Phone | Tools |
+|---|---|
+| Android | Android SDK Platform 37, Build-Tools 37.0.0, Platform-Tools, Command-line Tools, NDK 27.1.12297006, CMake 3.22.1; a JDK, such as Android Studio's bundled JDK |
+| iPhone | macOS, Xcode, Command Line Tools, CocoaPods, an Apple ID |
+
+On Android, turn on Developer options → USB debugging, connect a USB data cable, unlock, and approve debugging. On Windows, set `ANDROID_HOME` and `JAVA_HOME` if they differ from Android Studio's usual paths.
+
+Check: `adb devices -l` lists the phone as `device`.
+
+On an iPhone, connect it to the Mac, tap Trust, turn on Developer Mode and allow local network access. Add your Apple ID in Xcode → Settings → Accounts. Export `APPLE_TEAM_ID` and your own `TRANSMITTER_BUNDLE_ID` before building; do not change `app.json` for your own signing. With a free account, trust the developer under Settings → General → VPN & Device Management after the install. The install expires after seven days.
+
+Check: `xcrun devicectl list devices` lists the phone as available.
+
+Then, from the repo root:
+
+```bash
+npm ci --prefix transmitter
+npm run phone
+```
+
+`npm run phone` starts the app's code server on port 8082. Build and install the app itself once, as `transmitter/README.md` says.
+
+On the phone, open Transmitter and tap **Connect** beside the coordinator. Both iPhone and Android search the local network for coordinators; after Connect the app follows that coordinator to a new address. On the command post, start a mission; the phone follows the newest running mission by itself, between reports. Developer tools on the phone has a manual address, scenarios, test clips and timings.
+
+Check: a report spoken into the phone shows on the command post within a few seconds.
+
+## Development
+
+`npm run dev -- -p 3117` runs the coordinator with hot reload, with the same variables as `npm start` (`PROVIDER_MODE=local` for offline). Before calling a change done, run `npm test`, `npx tsc --noEmit` and `npm run lint` ([CONTRIBUTING.md](../CONTRIBUTING.md)).
+
+| Port | What |
+|---|---|
+| 3117 | The coordinator and the command post |
+| 3118 | Speech-to-text (whisper-server), offline mode |
+| 11434 | Ollama, offline mode |
+| 8082 | The phone app's code server |
 
 ## When something fails
 
-- **Missing coordinator build:** run Build, then Start.
-- **Missing Ollama model:** install `ministral-3:3b` once, then Start.
-- **Phone not detected:** unlock, reconnect and accept trust/debugging; use one connected phone. An iPhone counts as connected when `xcrun xctrace list devices` lists it under `== Devices ==`. One under `== Devices Offline ==` is only remembered by Xcode and does not count.
-- **"More than one phone is connected":** leave only the phone you use connected. An iPhone that Xcode reaches over Wi-Fi is under `== Devices ==` too and counts with no cable, so the second phone can be one on the same network. Phones that Xcode only remembers no longer cause this.
-- **Coordinator without a mission:** use Start mission on the command post.
-- **Map is a plain background, "Base map not available":** no internet and no saved map. Run `npm run basemap -- vincennes` with internet, then Start again. Units and tracks draw meanwhile.
+- **`npm start` says there is no build:** run `npm run build` first, and again after changing code.
+- **"Speech-to-text on the coordinator is not ready":** start `npm run stt`. Typed reports still work.
+- **`whisper-server not found` or `ffmpeg not found`:** install whisper.cpp and ffmpeg (macOS: `brew install whisper.cpp ffmpeg`).
+- **Every report fails in offline mode:** Ollama is not running, or `ministral-3:3b` is not pulled. `ollama list` shows which.
+- **A port is taken:** `lsof -nP -iTCP:3117 -sTCP:LISTEN` shows by what. Stop that process in its own console.
+- **A checkout from before 25 November still runs the old launcher:** end it with `pkill -9 -f scripts/launcher/supervisor.mjs`; its servers stop with it (decision 262).
+- **No mission on the command post:** start one from the Missions menu, or run `npm run demo`.
+- **Map is a plain background, "Base map not available":** no internet and no saved map. Run `npm run basemap -- vincennes` with internet, then restart the coordinator. Units and tracks draw meanwhile.
 - **Map is coarse or empty away from the area:** only the tiles around the area are saved.
-- **Unrelated process on a port:** stop it in its own console; unverified processes are not killed.
-- **Build/start error:** the console gives the cause; details are in `.run/launcher.log`.
+- **Phone not detected:** unlock it, reconnect, and accept trust or debugging. An iPhone counts as connected when `xcrun xctrace list devices` lists it under `== Devices ==`; one under `== Devices Offline ==` is only remembered by Xcode.
 - **Phone build fails with `Undefined symbols` for `RCTReconnectingWebSocket` or `Sealable`:** the Debug app linked React Native's Release copy, left in `transmitter/ios/Pods` by a Release build before a `pod install` (decision 255). Run `LANG=en_US.UTF-8 npx expo prebuild --platform ios` in `transmitter/` once, then build the app again with `LANG=en_US.UTF-8 npx expo run:ios`. Prebuild makes `ios/` again from the config, so it takes a few minutes and downloads React Native's copies again.
-
-Each command retires old project controllers before using the current code. Shutdown
-scans processes by checkout path, working directory and parent/child ownership across all
-ports, including servers started directly and orphan workers. It requests a clean stop,
-forces termination after a timeout, and rescans before reporting Stopped. Inspection or
-cleanup failure is an error; a controller’s old Stopped flag is never accepted as proof.
-Ollama and Whisper on their configured local ports and project-owned model processes are included;
-unrelated services and the shared ADB server are left alone.
-
-To reclaim old speech-model storage on an Android development build, first load the updated
-app, then run this with the phone connected. It removes only the two old model files and
-keeps app settings:
-
-```bash
-adb shell run-as dev.voicetomap.transmitter rm -f files/models/ggml-base-q5_1.bin files/models/ggml-small-q5_1.bin
-```
-
-Whisper keeps upstream port 3118. The private controller uses 3116 and migrates an old
-conflicting setting automatically. The receiver remains on 3117 and Metro on 8082.
-
-Several Safari tabs can have established connections to one coordinator listener on 3117.
-Those client connections are not extra servers. Cleanup targets server listeners and owned
-workers, leaving browser processes alone. Startup requires the newly launched coordinator
-to confirm it bound its port; an old server’s healthy response cannot produce a false Ready.
-Cleanup finishes even when the operation that requested it was cancelled.
-
-The native phone launcher now says `npm start`, with `npm start light` in its help text.
-This wording is compiled into the app; run Build once to install the updated binary.
-
-The transmitter is a radio: begin live reports with the sender’s call sign. The coordinator
-reads it from the words against the mission roster; held reports and questions are handled
-on the command post. Green Reporting means a connected coordinator and an active mission.
-Advanced fleet updates remain available with `npm run phones --prefix transmitter`; keep
-the normal Build/Start/Stop procedure for daily use.

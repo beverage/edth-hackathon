@@ -213,7 +213,7 @@ What this says for the morning: the two French names an English speaker would re
 
 ### The call-sign reader
 
-Two rounds of held-out cases for a call sign at the end, each written by a separate agent from the rule alone. The first rule named a wrong unit in 9 of 10 cases written to get past it. With a written pause as a condition, a second round still named one in 12 of 12 where an order or a reply ended with who it was for. As the reader is now, a question for the operator, no case in either round names a unit by itself where none was wanted. The table is in [callsigns.md](callsigns.md#the-sign-off-rounds-22-nov).
+Two rounds of held-out cases for a call sign at the end, each written by a separate agent from the rule alone. The first rule named a wrong unit in 9 of 10 cases written to get past it. With a written pause as a condition, a second round still named one in 12 of 12 where an order or a reply ended with who it was for. As the reader is now, a question for the operator, no case in either round names a unit by itself where none was wanted. The table is in [callsigns.md](../callsigns.md#the-sign-off-rounds-22-nov).
 
 ## By hand, in the dress rehearsal
 
@@ -256,7 +256,7 @@ The rule for the script: never give one unit two far places back to back. Go rou
 
 ## A call sign at the end
 
-Built on the night of 21 to 22 November, in `lib/geo/callsigns.ts`, with no model [237]. The rule and its scores are in [callsigns.md](callsigns.md#a-call-sign-at-the-end).
+Built on the night of 21 to 22 November, in `lib/geo/callsigns.ts`, with no model [237]. The rule and its scores are in [callsigns.md](../callsigns.md#a-call-sign-at-the-end).
 
 "At Vincennes station, Alpha 1, over." does not go to ALPHA 1 by itself. It waits in the Decisions list with "Heard “Alpha 1” at the end. Was that ALPHA 1?" and **Give to ALPHA 1** as option 1 [240]. After the confirm it is read as if ALPHA 1 had said its call sign first.
 
@@ -273,7 +273,7 @@ Adam's work [223, 229 to 233], sorted by whether a soldier would say it, with wh
 | A bearing and a distance from the speaker: "unknown vehicle, bearing 060, 300 metres" | Yes. It is how a contact is reported | Right every time, with "unknown" said. The label keeps the bearing | **In the script, line 5.** It has no place name for Whisper to miss |
 | A grid for a position: "at grid 586 101" | Yes. It is the usual way to give a place | Right every time, in six ways of saying it | **Before the pitch, for CHARLIE 3.** On stage only if Alex's voice passes 5 of 5: six digits are six chances for Whisper |
 | A grid for a sighting: "enemy vehicle at grid 588 106" | Yes | Right | An alternate for line 5 |
-| A distance from a grid: "drone 200 metres north of grid 586 101" | Sometimes | **Wrong:** read as about a track that does not exist | No. A gap, in [known-gaps.md](known-gaps.md) |
+| A distance from a grid: "drone 200 metres north of grid 586 101" | Sometimes | **Wrong:** read as about a track that does not exist | No. A gap, in [known-gaps.md](../known-gaps.md) |
 | Mils: "1600 mils, 400 metres" | Yes, by mortar and artillery observers | Right: "bearing 090" | No: one more number format to explain |
 | Clock directions: "contact at 2 o'clock" | Yes, but from the way the speaker faces [224] | **Wrong** with "contact": read as the speaker moving | No |
 | The grid lines, the ruler and the grid box on the map page and the command post [232, 245] | The operator's tools. The phone hears nothing back [208] | | Not on stage. To check that a spoken grid landed in the right cell, read the grid after the unit's position on the command post [245], or the grid box on the map page |
@@ -332,7 +332,7 @@ Things that will happen on stage at least once. Each is done once in pass 4, by 
 Ten minutes before, at the venue.
 
 1. The Mac is on power. On the cable, its Wi-Fi is off, to show offline. On the phone's hotspot, the phone's mobile data is off instead.
-2. The servers are up in offline mode ([setup.md](setup.md)): the coordinator, Ollama with `ministral-3:3b`, and Whisper. Nothing else is using Ollama: no second coordinator, no eval. The map's corner says "Map saved on this computer" [239]. If it says "Base map not available", the map was not fetched on this Mac: with internet, run `npm run basemap -- vincennes`, then Start again; the units draw on a plain background meanwhile.
+2. The servers are up in offline mode ([setup.md](../setup.md)): the coordinator, Ollama with `ministral-3:3b`, and Whisper. Nothing else is using Ollama: no second coordinator, no eval. The map's corner says "Map saved on this computer" [239]. If it says "Base map not available", the map was not fetched on this Mac: with internet, run `npm run basemap -- vincennes`, then Start again; the units draw on a plain background meanwhile.
 3. The phone reaches the Mac, on the cable or the hotspot. Reopen the app after any change of link. The phone's language is English.
 4. Every other mission is ended. Then a fresh one: Vincennes, start point Château de Vincennes, roster ALPHA 1, BRAVO 2, CHARLIE 3.
 5. CHARLIE 3 is marked Drone team.

@@ -1,5 +1,5 @@
 /**
- * The stage eval (docs/stage-test-plan.md): sends each line of evals/stage.cases.json to a running
+ * The stage eval (docs/hackathon/stage-test-plan.md): sends each line of evals/stage.cases.json to a running
  * coordinator as a radio report, in a fresh mission, and scores the reply and the mission's log.
  *
  *   npm run eval:stage                          typed, every case once

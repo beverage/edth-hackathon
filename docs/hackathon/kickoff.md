@@ -14,7 +14,7 @@ EDTH Paris 2026, challenge 01, set by Lysk. Their brief: teams report their posi
 - Lysk's mentors are Henry Heinemann and Florent Ogès.
 - The jury is military representatives, mentors and partner companies. It counts only what was built during the event.
 
-More: [overview.md](overview.md).
+More: [overview.md](../overview.md).
 
 ---
 
@@ -54,7 +54,7 @@ or a scripted clip          2. intent            Mistral, or a small model on th
                                                                                           replay
 ```
 
-Five words to learn: **transmitter**, **coordinator**, **receiver**, **mission** (one run, one log) and **gazetteer** (our list of places for one area). The rest are in [glossary.md](glossary.md); the parts are in [architecture.md](architecture.md).
+Five words to learn: **transmitter**, **coordinator**, **receiver**, **mission** (one run, one log) and **gazetteer** (our list of places for one area). The rest are in [glossary.md](../glossary.md); the parts are in [architecture.md](../architecture.md).
 
 ---
 
@@ -70,7 +70,7 @@ Two minutes, on the Mac that runs the coordinator.
 curl -s -X POST http://localhost:3117/api/report --form-string session=vincennes-1 --form-string callsign=ALPHA1 --form-string "text=I'm at Bérault metro."
 ```
 
-Then say or type, in order: "Now I'm at the château de Vincennes" (it asks: castle or station?), "Moving towards the town hall" (the marker moves half way, with an arrow), "Je suis devant la mairie". Drag the slider to replay. The scripts are in the [README](../README.md#demo-script).
+Then say or type, in order: "Now I'm at the château de Vincennes" (it asks: castle or station?), "Moving towards the town hall" (the marker moves half way, with an arrow), "Je suis devant la mairie". Drag the slider to replay. The scripts are in the [README](../../README.md#demo-script).
 
 ---
 
@@ -86,15 +86,15 @@ Checked on Friday night, 20 November.
 | Offline mode: intent on the Mac through Ollama, no key needed; the map, saved on the Mac by `npm run basemap` (22 Nov) | The offline network and HTTPS |
 | Crossings, distance and compass direction, same-name streets in two towns | Grid references, spoken coordinates, nicknames that are on no map |
 | Unit tests for the resolver, and two scripted scenarios | The evaluation harness; real Ukrainian speech; an error figure from a field walk |
-| A third area: Izium, a town near the front, built on Saturday night with its own 9-step script ([gazetteer.md](gazetteer.md#izium-added-saturday-21-november)) | The pitch: story, deck, video |
+| A third area: Izium, a town near the front, built on Saturday night with its own 9-step script ([gazetteer.md](../gazetteer.md#izium-added-saturday-21-november)) | The pitch: story, deck, video |
 
-The known limits are in [known-gaps.md](known-gaps.md).
+The known limits are in [known-gaps.md](../known-gaps.md).
 
 ---
 
 ## 7. What we do not know yet
 
-Alex looks for Lysk's mentors from 08:00. Three answers can move the plan ([all seventeen questions](open-questions.md#for-lysk)):
+Alex looks for Lysk's mentors from 08:00. Three answers can move the plan ([all seventeen questions](../open-questions.md#for-lysk)):
 
 1. **How does a report reach the map today?** A radio net heard at the command post, or a device per speaker? Our phone app is only a stand-in for a radio. If it is radio, nobody "joins", the call sign has to come from the words, and noise becomes the main risk.
 2. **How will they judge it?** Their sentences and places, or ours? Which area? Live or a video?
@@ -124,7 +124,7 @@ Times are Paris.
 
 ## 9. The work: four roles
 
-There are four of us, so the work is four roles. Pick one; nobody is assigned. The detail, and what we leave out to fit, are in [work-split.md](work-split.md). The plan behind each part is in [plan.md](plan.md).
+There are four of us, so the work is four roles. Pick one; nobody is assigned. The detail, and what we leave out to fit, are in [work-split.md](work-split.md). The plan behind each part is in [plan.md](../plan.md).
 
 | Role | A first task |
 |---|---|
@@ -146,7 +146,7 @@ git clone git@github.com:beverage/edth-hackathon.git
 cd edth-hackathon
 ```
 
-Then ask your coding agent: "set up this computer by following docs/setup.md". It works through [setup.md](setup.md) with a check after each step: the web app, offline mode with Ollama, and the transmitter on a phone if you have a Mac with Xcode. Claude Code and Codex both read [AGENTS.md](../AGENTS.md).
+Then ask your coding agent: "set up this computer by following docs/setup.md". It works through [setup.md](../setup.md) with a check after each step: the web app, offline mode with Ollama, and the transmitter on a phone if you have a Mac with Xcode. Claude Code and Codex both read [AGENTS.md](../../AGENTS.md).
 
 The app runs on port 3117, not 3000. Before you push:
 
@@ -158,9 +158,9 @@ npm test && npx tsc --noEmit && npm run lint
 
 ## 11. How we work
 
-- **Every choice gets one numbered line** at the end of [DECISIONS.md](../DECISIONS.md). A rule that looks odd usually has a line there.
-- **Docs change in the same commit as the code.** [README.md](README.md) says which file covers what.
-- **Contracts change on purpose.** `lib/geo/types.ts` and the fields of `POST /api/report` are shared with the transmitter and the receiver ([contracts.md](contracts.md)).
+- **Every choice gets one numbered line** at the end of [DECISIONS.md](../../DECISIONS.md). A rule that looks odd usually has a line there.
+- **Docs change in the same commit as the code.** [README.md](../README.md) says which file covers what.
+- **Contracts change on purpose.** `lib/geo/types.ts` and the fields of `POST /api/report` are shared with the transmitter and the receiver ([contracts.md](../contracts.md)).
 - **Secrets live in env vars.** The repo is public.
 - **Deploys go through Alex** for now.
 
@@ -180,4 +180,4 @@ Four rules of the product, which agents follow too:
 3. One shared Mistral key, or each person their own. Offline mode needs none.
 4. The demo area: Vincennes, central Kyiv, or Izium. The mentors' answer may decide it.
 
-The full list is in [open-questions.md](open-questions.md#for-the-team).
+The full list is in [open-questions.md](../open-questions.md#for-the-team).

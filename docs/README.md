@@ -4,7 +4,7 @@ Everything the team needs to know about Voice-to-Map, as plain Markdown in this 
 
 ## Start here
 
-Joining on Saturday 21 November? Start with the [kickoff](kickoff.md): it is the fifteen-minute version of everything below.
+To see it work, follow [Setup](setup.md) to step 2: `npm run demo` fills the command post with no phone.
 
 New to the project? Read these in order:
 
@@ -12,7 +12,7 @@ New to the project? Read these in order:
 2. [Architecture](architecture.md): the parts, where each step runs, what is built.
 3. [Plan](plan.md): the work ahead, part by part.
 4. [CONTRIBUTING.md](../CONTRIBUTING.md): set up, run the checks, how we work together.
-5. [Setup](setup.md): install once, then Build/Start/Stop; direct console commands remain.
+5. [Setup](setup.md): every step to run it, with a check after each.
 
 ## What is where
 
@@ -29,20 +29,27 @@ New to the project? Read these in order:
 | [ask-back.md](ask-back.md) | Taking the answer to a question by voice: the kinds of reply, telling an answer from a new report, the reply reader and its measured scores | Spoken answers are built, or the reply eval is run again |
 | [voices.md](voices.md) | Other voices in a clip, whispers, and how to record test clips | The voice rules change, or clips are measured |
 | [tracks.md](tracks.md) | Tracks: screenshots of the receiver and the phone, the symbols, and diagrams of how a report becomes a track | The track rules or the screens for them change; retake the pictures |
-| [merge-coordinator-stt.md](merge-coordinator-stt.md) | Selected PRs, merge scope and first-time speech setup | Coordinator transcription integration changes |
 | [stt-comparison.md](stt-comparison.md) | Speech-to-text options measured on the scenario clips: Whisper base and small, Parakeet, Voxtral; the failures seen and a recommendation | An option is measured again, on real clips or a real phone |
 | [callsigns.md](callsigns.md) | Call signs read from a radio report's words and matched against the mission's roster: the rules, the eval and its scores, the limits; a call sign said last, and why it is a question for the operator; the roster, held reports in the Decisions list and the guards in the coordinator | The reader's rules change, or the eval is run on new cases |
 | [tracks.md](tracks.md) | Tracks: screenshots of the command post and the phone, the symbols, diagrams of how a report becomes a track, placing tracks by hand, recon requests and tasking with their eval, and what moves on the map | The track rules or the screens for them change; retake the pictures |
 | [setup.md](setup.md) | Setting up a computer and phone, with a check after each step | A tool, version, command or port changes |
 | [showcase.md](showcase.md) | The four command post pictures at the top of the README: the missions, every line sent, and how they were taken | The command post changes; retake the pictures |
-| [stage-test-plan.md](stage-test-plan.md) | The test plan for the pitch: what can fail on stage, the passes each line must clear, the scenarios, the voice sheet for Alex, the drills, the candidate stage script and the pre-flight | A pass is run, a line is locked or dropped, or the stage set-up changes |
-| [kickoff.md](kickoff.md) | The Saturday 08:00 opening for the two new teammates: what we build, where we stand, the two days, the streams of work | Delete it after the weekend; the other files hold the detail |
-| [work-split.md](work-split.md) | A proposal, not a decision: four roles for the four of us, one of them evidence then pitch, and what we leave out to fit | The team agrees a split, or the mentors' answers move it |
-| [demo-script.md](demo-script.md) | The one sheet to run the live demo from: the pre-flight, the eight steps with what each shows, the pacing, and what to do when a step fails | A stage line changes in the test plan, or the rehearsal changes a step |
-| [pitch.md](pitch.md) | The Demo Day deck in full: every slide's words and speaker notes, where the deck lives, its pictures, what is still to fill in, its look, and how to submit it | Any word on a slide or in its notes changes, in the same change as the deck; a placeholder is filled |
-| [receiver-review.md](receiver-review.md) | The Saturday-night review of the receiver, now the command post: what was fixed, and the decisions left for Alex | A decision in it is made; delete it when none are left |
-| [handoff-prompt-tuning.md](handoff-prompt-tuning.md) | Handoff: tuning the extraction prompt with the eval and the two skills, where it stands, what is next | A cycle finishes; fold it into evals/README.md when the work settles |
-| [handoff-android-microphone.md](handoff-android-microphone.md) | Android PCM implemented; remaining recognition and timing checks | Delete it when validation is done |
+
+## The hackathon (archive)
+
+Working papers from the weekend of 20 to 22 November 2026, in [hackathon/](hackathon/). They say what was true then and are not kept up to date. The code at the deadline is the tag `deadline-sun-1200` [262].
+
+| File | What it held |
+|---|---|
+| [merge-coordinator-stt.md](hackathon/merge-coordinator-stt.md) | Selected PRs, merge scope and first-time speech setup |
+| [stage-test-plan.md](hackathon/stage-test-plan.md) | The test plan for the pitch: what can fail on stage, the passes each line must clear, the scenarios, the voice sheet for Alex, the drills, the candidate stage script and the pre-flight |
+| [kickoff.md](hackathon/kickoff.md) | The Saturday 08:00 opening for the two new teammates: what we build, where we stand, the two days, the streams of work |
+| [work-split.md](hackathon/work-split.md) | A proposal, not a decision: four roles for the four of us, one of them evidence then pitch, and what we leave out to fit |
+| [demo-script.md](hackathon/demo-script.md) | The one sheet to run the live demo from: the pre-flight, the eight steps with what each shows, the pacing, and what to do when a step fails |
+| [pitch.md](hackathon/pitch.md) | The Demo Day deck in full: every slide's words and speaker notes, where the deck lives, its pictures, what is still to fill in, its look, and how to submit it |
+| [receiver-review.md](hackathon/receiver-review.md) | The Saturday-night review of the receiver, now the command post: what was fixed, and the decisions left for Alex |
+| [handoff-prompt-tuning.md](hackathon/handoff-prompt-tuning.md) | Handoff: tuning the extraction prompt with the eval and the two skills, where it stands, what is next |
+| [handoff-android-microphone.md](hackathon/handoff-android-microphone.md) | Android PCM implemented; remaining recognition and timing checks |
 
 Elsewhere in the repo:
 

@@ -1,14 +1,10 @@
 # Architecture
 
-One speaker's path works end to end on the live site, in two areas and three languages. The shared command post works on a coordinator that runs on a computer; the live site does not keep reports yet. Local mode and the evaluation harness are not finished. Status as of Friday 20 November, evening.
+Everything below runs on one computer, in three areas and three languages, in hosted or offline mode; the command post shows every mission the coordinator keeps. Status as of 25 November. What is not built yet is in [known-gaps.md](known-gaps.md).
 
-## Build, start and stop (21 November)
+## The servers (25 November)
 
-`npm run build` fingerprints source/dependencies, builds changed components and loads a
-changed or missing phone app on the connected device. `npm start` stops existing project
-servers and starts whisper-server, Ollama, coordinator/web server and Metro; it does not build or launch
-the phone app. `npm stop` stops project components and the connected phone app. The private
-local process controller exits on Stop. The normal Next output is `.next`; state is `.run`.
+Each server runs in its own console, with plain commands [262]: `npm run build` then `npm start` for the coordinator on 3117 (`PROVIDER_MODE=local` for offline mode); in offline mode, Ollama on 11434 and `npm run stt`, whisper.cpp's server, on 3118; and `npm run phone`, Metro for the phone app, on 8082. `npm run demo` fills a mission with typed radio reports, with no phone. Every step is in [setup](setup.md). From 21 to 25 November one Node launcher started and stopped them all [210]; it is gone.
 
 The phone detects the configured coordinator, offers Connect, and shows whether a mission
 is running. Start mission/Stop mission live on the receiver. Phones automatically join the newest running mission and follow newer missions between reports. Open missions survive server
@@ -78,7 +74,7 @@ The coordinator is one Next.js app, on Vercel in Paris or on the Mac. The dashed
 flowchart TB
     IN["POST /api/report<br/>audio or text, area, language, lastPosition,<br/>session, callsign, seq, clientTs"]
     CTX["Mission context, only with a session<br/>reportContext in lib/reports/record.ts<br/>area, last position and tracks from the log"]
-    STT["Step 1: speech-to-text, skipped for text<br/>Transcriber in lib/providers/transcriber.ts<br/>local Whisper turbo by default, base with `npm start light` or hosted Mistral"]
+    STT["Step 1: speech-to-text, skipped for text<br/>Transcriber in lib/providers/transcriber.ts<br/>local Whisper turbo by default, base with WHISPER_PROFILE=light, or hosted Mistral"]
     REQ["Step 1b: a request for recon cut out<br/>splitRequest in lib/geo/requests.ts<br/>pure code; a call that is only a request is saved, not read"]
     subgraph VOICES["For each voice"]
         EXT["Step 2: extraction<br/>IntentExtractor in lib/providers/extractor.ts<br/>mistral-small-latest, or ministral-3:3b in local mode<br/>strict JSON schema, never coordinates"]
@@ -134,7 +130,7 @@ no speech-to-text. Developer tools contain scenarios and connection overrides.
 | Step | Where |
 |---|---|
 | Recording | On the phone |
-| Speech-to-text | Mistral's API, called from our server in Paris; or Whisper turbo by default, base with `npm start light` on the coordinator in local mode [182] |
+| Speech-to-text | Mistral's API, called from our server in Paris; or Whisper turbo by default, base with `WHISPER_PROFILE=light`, on the coordinator in local mode [182] |
 | Intent extraction | Mistral's API, same route; or Ollama on the same computer in local mode [83] |
 | Resolving the place | Our server; plain code, no AI, no outside calls |
 | Map | In the browser, on the phone page and the command post. Tiles, fonts and icons from OpenFreeMap; in local mode from the copy saved on the coordinator; a plain background with the units if neither loads [239] |
