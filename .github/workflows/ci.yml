@@ -54,7 +54,7 @@ jobs:
         with:
           path: public/tts
           key: tts-${{ hashFiles('lib/tts/voiceManifest.json') }}
-      - run: npm run build:web
+      - run: npm run build
 
   transmitter:
     name: Transmitter types

@@ -9,7 +9,7 @@
 /**
  * Tokens of context for every local call. The extraction prompt is about 4,560 tokens, a report
  * under 100 and the answer at most 400; this leaves about 3,000 for the prompt to grow.
- * The launcher starts Ollama with the same value, so no call reloads the model at another size.
+ * docs/setup.md starts Ollama with the same value, so no call reloads the model at another size.
  */
 export const LOCAL_NUM_CTX = 8192;
 

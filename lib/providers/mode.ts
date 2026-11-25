@@ -14,7 +14,7 @@ export function ollamaUrl(): string {
   return (process.env.OLLAMA_URL || "http://127.0.0.1:11434").replace(/\/+$/, "");
 }
 
-/** whisper-server's address in local mode: whisper.cpp on this computer, managed by `npm start`. */
+/** whisper-server's address in local mode: whisper.cpp on this computer, started with `npm run stt`. */
 export function whisperUrl(): string {
   return (process.env.WHISPER_URL || "http://127.0.0.1:3118").replace(/\/+$/, "");
 }

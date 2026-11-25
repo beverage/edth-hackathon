@@ -1,0 +1,31 @@
+{
+  "area": "vincennes",
+  "name": "Vincennes, patrol net",
+  "start": "way/23032971",
+  "roster": ["ALPHA 1", "ALPHA 2", "BRAVO 1", "BRAVO 2", "CHARLIE 3", "DELTA 1", "ECHO 2"],
+  "steps": [
+    { "kind": ["CHARLIE 3", "drone_team"] },
+    { "text": "Charlie 3, at grid 586 101." },
+    { "text": "Alpha 1, at Vincennes station." },
+    { "text": "Alpha 2, at Bérault metro." },
+    { "text": "Bravo 1, je suis à la mairie de Vincennes.", "language": "fr" },
+    { "text": "Echo 2, at Château de Vincennes metro station." },
+    { "text": "Delta 1, at the castle.", "label": "castle" },
+    { "answer": ["castle", "way/23032971"] },
+    { "text": "Alpha 1, two enemy vehicles on Avenue de Paris, moving east." },
+    { "text": "Alpha 2, I see a drone about 300 metres north of me." },
+    { "text": "Bravo 1, suspicious vehicle near the church." },
+    { "text": "Bravo 1, voiture civile devant la mairie.", "language": "fr" },
+    { "text": "Delta 1, unknown people, bearing 120, 300 metres." },
+    { "text": "Alpha 1, unknown vehicle, bearing 060, 300 metres, send the drone.", "label": "req1" },
+    { "send": { "unit": "CHARLIE 3", "request": "req1" } },
+    { "text": "Echo 2, enemy patrol near the cemetery." },
+    { "text": "Alpha 2, moving towards Avenue de Paris." },
+    { "text": "Charlie 3, Track 6 is hostile." },
+    { "text": "Alpha 1, Track 1 moved to Avenue de Nogent." },
+    { "text": "Delta 1, Track 3, request eyes on." },
+    { "text": "At the town hall, Bravo 2, over." },
+    { "text": "Moving towards the château, over." },
+    { "text": "Alpha 2, at the church." }
+  ]
+}

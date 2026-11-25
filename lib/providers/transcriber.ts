@@ -198,7 +198,7 @@ export async function checkLocalTranscriber(): Promise<boolean> {
     else console.warn(`[stt] whisper-server at ${url} is still loading its model`);
     return res.ok;
   } catch {
-    console.warn(`[stt] No whisper-server at ${url}: spoken reports will fail until it runs. Run \`npm run build\` then \`npm start\`; typed reports still work without it.`);
+    console.warn(`[stt] No whisper-server at ${url}: spoken reports will fail until it runs. Start it with \`npm run stt\` (\`npm run stt:prepare\` once first); typed reports still work without it.`);
     return false;
   }
 }

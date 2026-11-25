@@ -336,8 +336,8 @@ export async function POST(req: Request) {
   } catch (err) {
     timings.total = Math.round(performance.now() - t0);
     if (err instanceof LocalTranscriberDownError) {
-      console.warn(`[stt] ${err.message}. Run \`npm run build\` then \`npm start\`.`);
-      const error = "Speech-to-text on the coordinator is not ready. Start the servers with npm start; run npm run build first if speech models are missing.";
+      console.warn(`[stt] ${err.message}. Start it with \`npm run stt\` (\`npm run stt:prepare\` once first).`);
+      const error = "Speech-to-text on the coordinator is not ready. Start it with npm run stt; run npm run stt:prepare once first if the speech models are missing.";
       return NextResponse.json({ error, transcript, timings_ms: timings }, { status: 503 });
     }
     console.error("report failed", err);
